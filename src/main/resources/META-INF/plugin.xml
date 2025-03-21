@@ -6,6 +6,6 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.kavos113.clinetest.ToolWindowTest" id="ToolWindowTest"/>
+        <toolWindow factoryClass="com.github.kavos113.clinetest.ui.MainWindow" id="Cline"/>
     </extensions>
 </idea-plugin>
