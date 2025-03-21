@@ -7,6 +7,7 @@ import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
 import com.github.kavos113.clinetest.shared.message.ClineAskResponse
 import com.github.kavos113.clinetest.shared.message.ClineAskResponseListener
 import com.github.kavos113.clinetest.shared.message.ClineMessage
+import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.intellij.openapi.project.Project
 import java.util.concurrent.CountDownLatch
 
@@ -79,6 +80,21 @@ class Cline(
         } finally {
             connection.dispose()
         }
+    }
+
+    fun say(type: ClineSay, text: String? = null) {
+        if (abort) {
+            throw IllegalStateException("Task has been aborted")
+        }
+
+        messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClineMessageAdded(
+            ClineMessage(
+                ts = System.currentTimeMillis(),
+                type = ClineAskOrSay.Say,
+                say = type,
+                text = text
+            )
+        )
     }
 
     private fun startTask(task: String) {

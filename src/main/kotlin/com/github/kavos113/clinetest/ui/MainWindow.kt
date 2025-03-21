@@ -1,6 +1,5 @@
 package com.github.kavos113.clinetest.ui
 
-import com.github.kavos113.clinetest.Cline
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
