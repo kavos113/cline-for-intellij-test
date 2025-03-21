@@ -1,5 +1,6 @@
 package com.github.kavos113.clinetest
 
+import com.anthropic.models.messages.ToolUnion
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import java.io.File
@@ -108,4 +109,6 @@ SYSTEM INFORMATION
 Operating System: ${getOsName()}
 Default Shell: ${getDefaultShell()}
     """.trimIndent()
+
+    val TOOLS: List<ToolUnion> = listOf()
 }

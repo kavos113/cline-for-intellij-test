@@ -2,6 +2,13 @@ package com.github.kavos113.clinetest
 
 import com.anthropic.client.AnthropicClient
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
+import com.anthropic.core.JsonValue
+import com.anthropic.errors.AnthropicException
+import com.anthropic.models.messages.Message
+import com.anthropic.models.messages.MessageCreateParams
+import com.anthropic.models.messages.Model
+import com.anthropic.models.messages.ToolChoice
+import com.anthropic.models.messages.ToolChoiceAuto
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
 import com.github.difflib.patch.DeltaType
@@ -22,11 +29,10 @@ import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
 
@@ -421,5 +427,31 @@ class Cline(
 
         say(ClineSay.UserFeedback, text ?: "")
         return "The user is not pleased with the results. Use the feedback they provided to successfully complete the task, and then attempt completion again.\nUser's feedback:\n\"${text}\""
+    }
+
+    fun attemptApiRequest(): Message {
+        try {
+            val params = MessageCreateParams.builder()
+                .model(Model.CLAUDE_3_HAIKU_20240307) // most cheap model
+                .maxTokens(8192L)
+                .system(Prompt.SYSTEM_PROMPT)
+                .messages(listOf()) // TODO
+                .tools(Prompt.TOOLS)
+                .toolChoice(ToolChoiceAuto.builder().type(JsonValue.from("auto")).build())
+                .build()
+
+            return anthropicClient.messages().create(params)
+        } catch (e: AnthropicException) {
+            val (response, _) = ask(
+                ClineAsk.ApiReqFailed,
+                "Error occurred while making an API request: ${e.message}"
+            )
+            if (response == ClineAskResponse.YesButtonTapped) {
+                throw IllegalStateException("API request failed")
+            }
+
+            say(ClineSay.ApiReqRetired)
+            return attemptApiRequest()
+        }
     }
 }
