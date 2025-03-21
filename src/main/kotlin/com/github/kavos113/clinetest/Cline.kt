@@ -135,11 +135,26 @@ class Cline(
 
         this.say(ClineSay.Text, task)
 
-        var totalInputTokens = 0
-        var totalOutputTokens = 0
+        var totalInputTokens = 0L
+        var totalOutputTokens = 0L
 
         while (requestCount < maxRequestsPerTask) {
-            // TODO
+            val result = recursivelyMakeClaudeRequests(listOf(
+                ContentBlockParam.ofText(
+                    TextBlockParam.builder()
+                        .text(userPrompt)
+                        .build()
+                )
+            ))
+
+            totalInputTokens += result.inputTokens
+            totalOutputTokens += result.outputTokens
+
+            if (result.didEndLoop) {
+                break
+            } else {
+                userPrompt = "Ask yourself if you have completed the user's task. If you have, use the attempt_completion tool, otherwise proceed to the next step. (This is an automated message, so do not respond to it conversationally. Just proceed with the task.)"
+            }
         }
     }
 
@@ -297,6 +312,7 @@ class Cline(
     }
 
     fun analyzedProject(dirPath: String): String {
+        // TODO
         return ""
     }
 
@@ -447,8 +463,6 @@ class Cline(
 
     fun attemptApiRequest(): Message {
         try {
-            val message =
-
             val params = MessageCreateParams.builder()
                 .model(Model.CLAUDE_3_HAIKU_20240307) // most cheap model
                 .maxTokens(8192L)
