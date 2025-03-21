@@ -15,12 +15,19 @@ import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ClineSayTool
 import com.github.kavos113.clinetest.shared.message.ClineSayTools
 import com.github.kavos113.clinetest.shared.tool.ToolName
+import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.OSProcessHandler
+import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ExecutionException
 
 const val DEFAULT_MAX_REQUESTS_PER_TASK = 20
 
@@ -28,7 +35,7 @@ class Cline(
     task: String,
     apiKey: String,
     var maxRequestsPerTask: Int = DEFAULT_MAX_REQUESTS_PER_TASK,
-    project: Project
+    private val project: Project
 ) {
     private var anthropicClient: AnthropicClient = AnthropicOkHttpClient.builder()
         .apiKey(apiKey)
@@ -271,7 +278,7 @@ class Cline(
     }
 
     fun analyzedProject(dirPath: String): String {
-
+        return ""
     }
 
     fun listFiles(dirPath: String): String {
@@ -326,5 +333,57 @@ class Cline(
         }
 
         return result
+    }
+
+    fun executeCommand(command: String, returnEmptyStringOnSuccess: Boolean = false): String {
+        val (response, text) = ask(
+            ClineAsk.Command,
+            command
+        )
+        if (response != ClineAskResponse.YesButtonTapped) {
+            if (response == ClineAskResponse.TextResponse && text != null) {
+                say(ClineSay.UserFeedback, text)
+                return "The user denied this operation and provided the following feedback:\n\"${text}\""
+            }
+            return "The user denied this operation"
+        }
+
+        try {
+            val stringBuilder = StringBuilder()
+
+            val commandParts = if (System.getProperty("os.name").lowercase().contains("win")) {
+                "cmd /c $command"
+            } else {
+                command
+            }.split("\\s".toRegex())
+
+            val commandLine = GeneralCommandLine(commandParts)
+            commandLine.charset = StandardCharsets.UTF_8
+            commandLine.setWorkDirectory(project.basePath)
+
+            val latch = CountDownLatch(1)
+
+            val processHandler = OSProcessHandler(commandLine)
+            processHandler.addProcessListener(object : ProcessAdapter() {
+                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+                    stringBuilder.append(event.text)
+                }
+
+                override fun processTerminated(event: ProcessEvent) {
+                    latch.countDown()
+                }
+            })
+
+            processHandler.startNotify()
+            latch.await()
+
+            return "Command executed successfully. Output:\n$stringBuilder"
+        } catch (e: ExecutionException) {
+            val errorString = "Error executing command:\n${e.message}"
+            say(ClineSay.Error, "Error executing command: ${e.message}")
+            return errorString
+        }
+
+        return ""
     }
 }
