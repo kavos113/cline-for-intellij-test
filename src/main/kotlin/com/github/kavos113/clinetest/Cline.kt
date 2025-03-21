@@ -19,6 +19,7 @@ import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import java.io.File
+import java.util.*
 import java.util.concurrent.CountDownLatch
 
 const val DEFAULT_MAX_REQUESTS_PER_TASK = 20
@@ -271,5 +272,59 @@ class Cline(
 
     fun analyzedProject(dirPath: String): String {
 
+    }
+
+    fun listFiles(dirPath: String): String {
+        val path = File(dirPath).absolutePath
+        val root = System.getProperty("os.name").lowercase().let {
+            if (it.contains("win")) {
+                path.substring(0, 3)
+            } else {
+                "/"
+            }
+        }
+        val isRoot = path == root
+
+        if (isRoot) {
+            val (response, text) = ask(
+                ClineAsk.Tool,
+                Json.encodeToString(ClineSayTool(
+                    tool = ClineSayTools.ListFiles,
+                    path = dirPath,
+                    content = root
+                ))
+            )
+
+            if (response != ClineAskResponse.YesButtonTapped) {
+                if (response == ClineAskResponse.TextResponse && text != null) {
+                    say(ClineSay.UserFeedback, text)
+                    return "The user denied this operation and provided the following feedback:\n\"${text}\""
+                }
+                return "The user denied this operation"
+            }
+
+            return root
+        }
+
+        val files = File(dirPath).listFiles()?.map { if (it.isDirectory) "${it.name}/" else it.name }?.sorted() ?: emptyList()
+        val result = files.joinToString("\n")
+        val (response, text) = ask(
+            ClineAsk.Tool,
+            Json.encodeToString(ClineSayTool(
+                tool = ClineSayTools.ListFiles,
+                path = dirPath,
+                content = result
+            ))
+        )
+
+        if (response != ClineAskResponse.YesButtonTapped) {
+            if (response == ClineAskResponse.TextResponse && text != null) {
+                say(ClineSay.UserFeedback, text)
+                return "The user denied this operation and provided the following feedback:\n\"${text}\""
+            }
+            return "The user denied this operation"
+        }
+
+        return result
     }
 }
