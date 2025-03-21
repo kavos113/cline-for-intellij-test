@@ -40,8 +40,6 @@ import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CountDownLatch
@@ -186,11 +184,13 @@ class Cline(
 
             val (response, text) = ask(
                 ClineAsk.Tool,
-                Json.encodeToString(ClineSayTool(
-                    tool = ClineSayTools.EditedExistingFile,
-                    path = filePath,
-                    diff = diffRepresentation
-                ))
+                jacksonObjectMapper().writeValueAsString(
+                    ClineSayTool(
+                        tool = ClineSayTools.EditedExistingFile,
+                        path = filePath,
+                        diff = diffRepresentation
+                    )
+                )
             )
 
             if (response != ClineAskResponse.YesButtonTapped) {
@@ -206,11 +206,13 @@ class Cline(
         } else {
             val (response, text) = ask(
                 ClineAsk.Tool,
-                Json.encodeToString(ClineSayTool(
-                    tool = ClineSayTools.NewFileCreated,
-                    path = filePath,
-                    content = newContent
-                ))
+                jacksonObjectMapper().writeValueAsString(
+                    ClineSayTool(
+                        tool = ClineSayTools.NewFileCreated,
+                        path = filePath,
+                        content = newContent
+                    )
+                )
             )
 
             if (response != ClineAskResponse.YesButtonTapped) {
@@ -274,11 +276,13 @@ class Cline(
         val content = File(filePath).readText()
         val (response, text) = ask(
             ClineAsk.Tool,
-            Json.encodeToString(ClineSayTool(
-                tool = ClineSayTools.ReadFile,
-                path = filePath,
-                content = content
-            ))
+            jacksonObjectMapper().writeValueAsString(
+                ClineSayTool(
+                    tool = ClineSayTools.ReadFile,
+                    path = filePath,
+                    content = content
+                )
+            )
         )
 
         if (response != ClineAskResponse.YesButtonTapped) {
@@ -310,11 +314,13 @@ class Cline(
         if (isRoot) {
             val (response, text) = ask(
                 ClineAsk.Tool,
-                Json.encodeToString(ClineSayTool(
-                    tool = ClineSayTools.ListFiles,
-                    path = dirPath,
-                    content = root
-                ))
+                jacksonObjectMapper().writeValueAsString(
+                    ClineSayTool(
+                        tool = ClineSayTools.ListFiles,
+                        path = dirPath,
+                        content = root
+                    )
+                )
             )
 
             if (response != ClineAskResponse.YesButtonTapped) {
@@ -332,11 +338,13 @@ class Cline(
         val result = files.joinToString("\n")
         val (response, text) = ask(
             ClineAsk.Tool,
-            Json.encodeToString(ClineSayTool(
-                tool = ClineSayTools.ListFiles,
-                path = dirPath,
-                content = result
-            ))
+            jacksonObjectMapper().writeValueAsString(
+                ClineSayTool(
+                    tool = ClineSayTools.ListFiles,
+                    path = dirPath,
+                    content = result
+                )
+            )
         )
 
         if (response != ClineAskResponse.YesButtonTapped) {
