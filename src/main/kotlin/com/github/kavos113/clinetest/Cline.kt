@@ -246,4 +246,30 @@ class Cline(
 
         return sb.toString()
     }
+
+    fun readFile(filePath: String): String {
+        val content = File(filePath).readText()
+        val (response, text) = ask(
+            ClineAsk.Tool,
+            Json.encodeToString(ClineSayTool(
+                tool = ClineSayTools.ReadFile,
+                path = filePath,
+                content = content
+            ))
+        )
+
+        if (response != ClineAskResponse.YesButtonTapped) {
+            if (response == ClineAskResponse.TextResponse && text != null) {
+                say(ClineSay.UserFeedback, text)
+                return "The user denied this operation and provided the following feedback:\n\"${text}\""
+            }
+            return "The user denied this operation"
+        }
+
+        return content
+    }
+
+    fun analyzedProject(dirPath: String): String {
+
+    }
 }
