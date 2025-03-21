@@ -19,6 +19,8 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("junit:junit:4.13.2")
 
+    implementation("com.anthropic:anthropic-java:0.8.0")
+
     intellijPlatform {
         val type = providers.gradleProperty("platformType").get()
         val version = providers.gradleProperty("platformVersion").get()
