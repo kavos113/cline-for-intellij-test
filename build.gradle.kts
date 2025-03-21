@@ -2,6 +2,8 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.1.10"
     id("org.jetbrains.intellij.platform") version "2.3.0"
+
+    kotlin("plugin.serialization") version "2.1.20"
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -20,6 +22,8 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
 
     implementation("com.anthropic:anthropic-java:0.8.0")
+    implementation("io.github.java-diff-utils:java-diff-utils:4.15")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
     intellijPlatform {
         val type = providers.gradleProperty("platformType").get()

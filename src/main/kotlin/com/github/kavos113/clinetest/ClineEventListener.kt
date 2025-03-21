@@ -5,6 +5,7 @@ import com.intellij.util.messages.Topic
 
 interface ClineEventListener {
     fun onClineMessageAdded(message: ClineMessage)
+    fun onClineMessageClear()
 
     companion object {
         val CLINE_EVENT_TOPIC = Topic.create("Cline Event", ClineEventListener::class.java)
