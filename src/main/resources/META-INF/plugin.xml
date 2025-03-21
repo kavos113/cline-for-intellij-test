@@ -1,0 +1,11 @@
+<idea-plugin>
+    <id>com.github.kavos113.clinetest</id>
+    <name>Cline for IntelliJ Test</name>
+    <vendor>kavos113</vendor>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow factoryClass="com.github.kavos113.clinetest.ToolWindowTest" id="ToolWindowTest"/>
+    </extensions>
+</idea-plugin>
