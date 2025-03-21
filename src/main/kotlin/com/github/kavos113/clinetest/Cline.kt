@@ -14,6 +14,7 @@ import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ClineSayTool
 import com.github.kavos113.clinetest.shared.message.ClineSayTools
+import com.github.kavos113.clinetest.shared.tool.ToolInput
 import com.github.kavos113.clinetest.shared.tool.ToolName
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.OSProcessHandler
@@ -138,15 +139,15 @@ class Cline(
         return (inputCost + outputCost).toInt()
     }
 
-    fun executeTool(toolName: ToolName, toolInput: Any): String {
-        when (toolName) {
-            ToolName.WriteToFile -> TODO()
-            ToolName.ReadFile -> TODO()
-            ToolName.AnalyzeProject -> TODO()
-            ToolName.ListFiles -> TODO()
-            ToolName.ExecuteCommand -> TODO()
-            ToolName.AskFollowupQuestion -> TODO()
-            ToolName.AttemptCompletion -> TODO()
+    fun executeTool(toolName: ToolName, toolInput: ToolInput): String {
+        return when (toolName) {
+            ToolName.WriteToFile -> writeFile(toolInput.path!!, toolInput.content!!)
+            ToolName.ReadFile -> readFile(toolInput.path!!)
+            ToolName.AnalyzeProject -> analyzedProject(toolInput.path!!)
+            ToolName.ListFiles -> listFiles(toolInput.path!!)
+            ToolName.ExecuteCommand -> executeCommand(toolInput.command!!)
+            ToolName.AskFollowupQuestion -> askFollowUpQuestion(toolInput.question!!)
+            ToolName.AttemptCompletion -> attemptCompletion(toolInput.result!!, toolInput.command)
         }
     }
 
@@ -377,13 +378,48 @@ class Cline(
             processHandler.startNotify()
             latch.await()
 
+            if (returnEmptyStringOnSuccess) {
+                return ""
+            }
+
             return "Command executed successfully. Output:\n$stringBuilder"
         } catch (e: ExecutionException) {
             val errorString = "Error executing command:\n${e.message}"
             say(ClineSay.Error, "Error executing command: ${e.message}")
             return errorString
         }
+    }
 
-        return ""
+    fun askFollowUpQuestion(question: String): String {
+        val (_, text) = ask(
+            ClineAsk.Followup,
+            question
+        )
+        say(ClineSay.UserFeedback, text)
+        return "User's response:\n\"$text\""
+    }
+
+    fun attemptCompletion(result: String, command: String? = null): String {
+        var resultToSend = result
+        if (command != null) {
+            say(ClineSay.CompletionResult, resultToSend)
+
+            val commandResult = executeCommand(command, true)
+            if (commandResult.isNotEmpty()) {
+                return commandResult
+            }
+            resultToSend = ""
+        }
+
+        val (response, text) = ask(
+            ClineAsk.CompletionResult,
+            resultToSend
+        )
+        if (response == ClineAskResponse.YesButtonTapped) {
+             return ""
+        }
+
+        say(ClineSay.UserFeedback, text ?: "")
+        return "The user is not pleased with the results. Use the feedback they provided to successfully complete the task, and then attempt completion again.\nUser's feedback:\n\"${text}\""
     }
 }
