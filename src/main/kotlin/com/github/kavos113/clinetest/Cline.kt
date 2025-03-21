@@ -4,15 +4,26 @@ import com.anthropic.client.AnthropicClient
 import com.anthropic.client.okhttp.AnthropicOkHttpClient
 import com.anthropic.core.JsonValue
 import com.anthropic.errors.AnthropicException
+import com.anthropic.models.messages.ContentBlock
+import com.anthropic.models.messages.ContentBlockParam
 import com.anthropic.models.messages.Message
 import com.anthropic.models.messages.MessageCreateParams
+import com.anthropic.models.messages.MessageParam
 import com.anthropic.models.messages.Model
+import com.anthropic.models.messages.TextBlockParam
 import com.anthropic.models.messages.ToolChoice
 import com.anthropic.models.messages.ToolChoiceAuto
+import com.anthropic.models.messages.ToolResultBlockParam
+import com.anthropic.models.messages.ToolUseBlock
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
 import com.github.difflib.patch.DeltaType
 import com.github.difflib.patch.Patch
+import com.github.kavos113.clinetest.shared.ApiRequestInfo
+import com.github.kavos113.clinetest.shared.ApiTokenInfo
+import com.github.kavos113.clinetest.shared.ClaudeRequestResult
+import com.github.kavos113.clinetest.shared.anthropic.toContentBlockParam
 import com.github.kavos113.clinetest.shared.message.ClineAsk
 import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
 import com.github.kavos113.clinetest.shared.message.ClineAskResponse
@@ -54,6 +65,7 @@ class Cline(
     var abort = false
 
     private val messageBus = project.messageBus
+    private fun getClineService() = project.getService(ClineService::class.java)
 
     init {
         startTask(task)
@@ -77,14 +89,12 @@ class Cline(
         askResponse = null
         askResponseText = null
 
-        messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClineMessageAdded(
-            ClineMessage(
-                ts = System.currentTimeMillis(),
-                type = ClineAskOrSay.Ask,
-                ask = type,
-                text = question
-            )
-        )
+        getClineService().addClineMessage(ClineMessage(
+            ts = System.currentTimeMillis(),
+            type = ClineAskOrSay.Ask,
+            ask = type,
+            text = question
+        ))
 
         val latch = CountDownLatch(1)
         val connection = messageBus.connect()
@@ -112,14 +122,12 @@ class Cline(
             throw IllegalStateException("Task has been aborted")
         }
 
-        messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClineMessageAdded(
-            ClineMessage(
-                ts = System.currentTimeMillis(),
-                type = ClineAskOrSay.Say,
-                say = type,
-                text = text
-            )
-        )
+        getClineService().addClineMessage(ClineMessage(
+            ts = System.currentTimeMillis(),
+            type = ClineAskOrSay.Say,
+            say = type,
+            text = text
+        ))
     }
 
     private fun startTask(task: String) {
@@ -133,16 +141,16 @@ class Cline(
         var totalOutputTokens = 0
 
         while (requestCount < maxRequestsPerTask) {
-
+            // TODO
         }
     }
 
-    fun calculateApiCost(inputTokens: Int, outputTokens: Int): Int {
+    fun calculateApiCost(inputTokens: Long, outputTokens: Long): Double {
         val INPUT_COST_PER_MILLION = 3.0
         val OUTPUT_COST_PER_MILLION = 15.0
         val inputCost = (inputTokens / 1_000_000.0) * INPUT_COST_PER_MILLION
         val outputCost = (outputTokens / 1_000_000.0) * OUTPUT_COST_PER_MILLION
-        return (inputCost + outputCost).toInt()
+        return (inputCost + outputCost)
     }
 
     fun executeTool(toolName: ToolName, toolInput: ToolInput): String {
@@ -431,11 +439,13 @@ class Cline(
 
     fun attemptApiRequest(): Message {
         try {
+            val message =
+
             val params = MessageCreateParams.builder()
                 .model(Model.CLAUDE_3_HAIKU_20240307) // most cheap model
                 .maxTokens(8192L)
                 .system(Prompt.SYSTEM_PROMPT)
-                .messages(listOf()) // TODO
+                .messages(getClineService().getApiConversationHistory())
                 .tools(Prompt.TOOLS)
                 .toolChoice(ToolChoiceAuto.builder().type(JsonValue.from("auto")).build())
                 .build()
@@ -452,6 +462,204 @@ class Cline(
 
             say(ClineSay.ApiReqRetired)
             return attemptApiRequest()
+        }
+    }
+
+    fun recursivelyMakeClaudeRequests(userContent: List<ContentBlockParam>): ClaudeRequestResult {
+        if (abort) {
+            throw IllegalStateException("Task has been aborted")
+        }
+
+        getClineService().addMessageToApiConversationHistory(
+            MessageParam.builder()
+                .content(MessageParam.Content.ofBlockParams(userContent))
+                .role(MessageParam.Role.USER)
+                .build()
+        )
+
+        if (requestCount >= maxRequestsPerTask) {
+            val (response, _) = ask(
+                ClineAsk.RequestLimitReached,
+                "Claude Dev has reached the maximum number of requests for this task. Would you like to reset the count and allow him to proceed?"
+            )
+
+            if (response == ClineAskResponse.YesButtonTapped) {
+                requestCount = 0
+            } else {
+                getClineService().addMessageToApiConversationHistory(
+                    MessageParam.builder()
+                        .role(MessageParam.Role.ASSISTANT)
+                        .content(MessageParam.Content.ofBlockParams(listOf(
+                            ContentBlockParam.ofText(TextBlockParam.builder()
+                                .text("Failure: I have reached the request limit for this task. Do you have a new task for me?")
+                                .build()
+                            )
+                        )))
+                        .build()
+                )
+
+                return ClaudeRequestResult(
+                    didEndLoop = true,
+                    inputTokens = 0,
+                    outputTokens = 0
+                )
+            }
+        }
+
+        say(
+            ClineSay.ApiReqStarted,
+            jacksonObjectMapper().writeValueAsString(
+                ApiRequestInfo(
+                    model = Model.CLAUDE_3_HAIKU_20240307,
+                    maxTokens = 8192L,
+                    messages = Pair("...", MessageParam.builder()
+                        .content(MessageParam.Content.ofBlockParams(userContent))
+                        .role(MessageParam.Role.USER)
+                        .build()
+                    ),
+                    toolChoice = ToolChoice.ofAuto(ToolChoiceAuto.builder().type(JsonValue.from("auto")).build())
+                )
+            )
+        )
+
+        try {
+            val response = attemptApiRequest()
+            requestCount++
+
+            val assistantResponses: MutableList<ContentBlock> = mutableListOf()
+            var inputTokens = response.usage().inputTokens()
+            var outputTokens = response.usage().outputTokens()
+            say(
+                ClineSay.ApiReqFinished,
+                jacksonObjectMapper().writeValueAsString(
+                    ApiTokenInfo(
+                        tokensIn = inputTokens,
+                        tokensOut = outputTokens,
+                        cost = calculateApiCost(inputTokens, outputTokens)
+                    )
+                )
+            )
+
+            for (contentBlock in response.content()) {
+                contentBlock.text().ifPresent {
+                    assistantResponses.add(contentBlock)
+                    say(
+                        ClineSay.Text,
+                        contentBlock.text().get().text()
+                    )
+                }
+            }
+
+            var toolResults: MutableList<ToolResultBlockParam> = mutableListOf()
+            var attemptCompletionBlock: ToolUseBlock? = null
+            for (contentBlock in response.content()) {
+                contentBlock.toolUse().ifPresent {
+                    assistantResponses.add(contentBlock)
+
+                    val toolName = ToolName.fromString(contentBlock.toolUse().get().name())
+                    val toolInput = contentBlock.toolUse().get()._input().convert(ToolInput::class.java)
+                    val toolUseId = contentBlock.toolUse().get().id()
+
+                    if (toolName == ToolName.AttemptCompletion) {
+                        attemptCompletionBlock = contentBlock.toolUse().get()
+                    } else {
+                        val result = executeTool(toolName, toolInput!!)
+                        toolResults.add(
+                            ToolResultBlockParam.builder()
+                                .type(JsonValue.from("tool_result"))
+                                .toolUseId(toolUseId)
+                                .content(result)
+                                .build()
+                        )
+                    }
+                }
+            }
+
+            if (assistantResponses.isNotEmpty()) {
+                getClineService().addMessageToApiConversationHistory(
+                    MessageParam.builder()
+                        .role(MessageParam.Role.ASSISTANT)
+                        .content(MessageParam.Content.ofBlockParams(assistantResponses.toList().map { it.toContentBlockParam() }))
+                        .build()
+                )
+            } else {
+                say(
+                    ClineSay.Error,
+                    "Unexpected Error: No assistant messages were found in the API response"
+                )
+                getClineService().addMessageToApiConversationHistory(
+                    MessageParam.builder()
+                        .role(MessageParam.Role.ASSISTANT)
+                        .content(MessageParam.Content.ofBlockParams(listOf(
+                            ContentBlockParam.ofText(TextBlockParam.builder()
+                                .text("Failure: I did not have a response to provide.")
+                                .build()
+                            )
+                        )))
+                        .build()
+                )
+            }
+
+            var didEndLoop = false
+
+            if (attemptCompletionBlock != null) {
+                var result = executeTool(
+                    ToolName.fromString(attemptCompletionBlock!!.name()),
+                    attemptCompletionBlock!!._input().convert(ToolInput::class.java)!!
+                )
+
+                if (result == "") {
+                    didEndLoop = true
+                    result = "The user is satisfied with the result."
+                }
+                toolResults.add(
+                    ToolResultBlockParam.builder()
+                        .type(JsonValue.from("tool_result"))
+                        .toolUseId(attemptCompletionBlock!!.id())
+                        .content(result)
+                        .build()
+                )
+            }
+
+            if (toolResults.isNotEmpty()) {
+                if (didEndLoop) {
+                    getClineService().addMessageToApiConversationHistory(
+                        MessageParam.builder()
+                            .role(MessageParam.Role.USER)
+                            .content(MessageParam.Content.ofBlockParams(toolResults.toList().map { ContentBlockParam.ofToolResult(it) }))
+                            .build()
+                    )
+
+                    getClineService().addMessageToApiConversationHistory(
+                        MessageParam.builder()
+                            .role(MessageParam.Role.ASSISTANT)
+                            .content(MessageParam.Content.ofBlockParams(listOf(
+                                ContentBlockParam.ofText(TextBlockParam.builder()
+                                    .text("I am pleased you are satisfied with the result. Do you have a new task for me?")
+                                    .build()
+                                )
+                            )))
+                            .build()
+                    )
+                } else {
+                    val claudeResult = recursivelyMakeClaudeRequests(toolResults.toList().map { ContentBlockParam.ofToolResult(it) })
+                    didEndLoop = claudeResult.didEndLoop
+                    inputTokens += claudeResult.inputTokens
+                    outputTokens += claudeResult.outputTokens
+                }
+            }
+
+            return ClaudeRequestResult(
+                didEndLoop = didEndLoop,
+                inputTokens = inputTokens,
+                outputTokens = outputTokens
+            )
+        } catch (e: Exception) {
+            return ClaudeRequestResult(
+                didEndLoop = true,
+                inputTokens = 0,
+                outputTokens = 0
+            )
         }
     }
 }
