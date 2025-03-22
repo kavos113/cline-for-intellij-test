@@ -20,6 +20,7 @@ import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
 import com.github.difflib.patch.DeltaType
 import com.github.difflib.patch.Patch
+import com.github.kavos113.clinetest.analyze.ProjectAnalyzer
 import com.github.kavos113.clinetest.shared.ApiRequestInfo
 import com.github.kavos113.clinetest.shared.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.ClaudeRequestResult
@@ -44,6 +45,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutionException
+import kotlin.io.path.Path
 
 const val DEFAULT_MAX_REQUESTS_PER_TASK = 20
 
@@ -312,8 +314,34 @@ class Cline(
     }
 
     fun analyzedProject(dirPath: String): String {
-        // TODO
-        return ""
+        try {
+            val analysis = ProjectAnalyzer.analyzeProject(Path(dirPath))
+
+            val (response, text) = ask(
+                ClineAsk.Tool,
+                jacksonObjectMapper().writeValueAsString(
+                    ClineSayTool(
+                        tool = ClineSayTools.AnalyzeProject,
+                        path = dirPath,
+                        content = analysis
+                    )
+                )
+            )
+
+            if (response != ClineAskResponse.YesButtonTapped) {
+                if (response == ClineAskResponse.TextResponse && text != null) {
+                    say(ClineSay.UserFeedback, text)
+                    return "The user denied this operation and provided the following feedback:\n\"${text}\""
+                }
+                return "The user denied this operation"
+            }
+
+            return analysis
+        } catch (e: Exception) {
+            val errorString = "Error analyzing project:\n${e.message}"
+            say(ClineSay.Error, "Error analyzing project: ${e.message}")
+            return errorString
+        }
     }
 
     fun listFiles(dirPath: String): String {

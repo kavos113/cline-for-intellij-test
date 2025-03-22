@@ -22,6 +22,7 @@ dependencies {
     implementation("com.anthropic:anthropic-java:0.8.0")
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
+    implementation("io.github.tree-sitter:ktreesitter:0.24.1")
 
     intellijPlatform {
         val type = providers.gradleProperty("platformType").get()

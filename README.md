@@ -7,4 +7,8 @@ git submodule init
 cd cline
 git checkout -b version-1.0.4 v1.0.4
 npm run install:all
+
+cd ../
+npm install
+node esbuild.js
 ```
