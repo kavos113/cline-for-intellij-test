@@ -39,7 +39,7 @@ class ClineService(private val project: Project) {
         postMessageToWindow(ExtensionMessage(state = ExtensionState(messages)))
     }
 
-    private fun clearTask() {
+    fun clearTask() {
         if (cline != null) {
             cline!!.abort = true
             cline = null
@@ -47,6 +47,8 @@ class ClineService(private val project: Project) {
 
         setApiConversationHistory(emptyList())
         setClineMessages(emptyList())
+
+        postStateToWindow()
     }
 
     fun addClineMessage(message: ClineMessage): List<ClineMessage> {
