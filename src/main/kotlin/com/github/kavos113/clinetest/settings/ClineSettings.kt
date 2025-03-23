@@ -3,6 +3,7 @@ package com.github.kavos113.clinetest.settings
 import com.anthropic.models.messages.MessageParam
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.kavos113.clinetest.DEFAULT_MAX_REQUESTS_PER_TASK
 import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
@@ -26,7 +27,7 @@ class ClineSettings : PersistentStateComponent<ClineSettings.State> {
         @OptionTag(converter = ClineMessageMapConverter::class)
         var messages: Map<Long, List<ClineMessage>> = emptyMap(),
 
-        var maxRequestsPerTask: Int = 20,
+        var maxRequestsPerTask: Int = DEFAULT_MAX_REQUESTS_PER_TASK,
     )
 
     private var myState = State()

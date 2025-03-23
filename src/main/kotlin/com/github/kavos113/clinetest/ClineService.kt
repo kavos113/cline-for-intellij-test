@@ -1,22 +1,34 @@
 package com.github.kavos113.clinetest
 
 import com.anthropic.models.messages.MessageParam
+import com.github.kavos113.clinetest.settings.ClineSecretSettings
 import com.github.kavos113.clinetest.settings.ClineSettings
 import com.github.kavos113.clinetest.shared.message.ClineMessage
-import com.intellij.credentialStore.CredentialAttributes
-import com.intellij.credentialStore.Credentials
-import com.intellij.ide.passwordSafe.PasswordSafe
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
-class ClineService(project: Project) {
+class ClineService(private val project: Project) {
     private var cline: Cline? = null
     private val clineInstanceIdentifier: Long = System.currentTimeMillis()
 
-    fun clearTask() {
+    // "newTask"
+    fun tryToInitClineWithTask(task: String) {
+        clearTask()
+        val apiKey = ClineSecretSettings.getSecret(ClineSecretSettings.API_KEY)
+        val maxRequestsPerTask = ClineSettings.getInstance().state.maxRequestsPerTask
+
+        if (apiKey.isNotEmpty()) {
+            cline = Cline(
+                task = task,
+                apiKey = apiKey,
+                maxRequestsPerTask = maxRequestsPerTask,
+                project = project
+            )
+        }
+    }
+
+    private fun clearTask() {
         if (cline != null) {
             cline!!.abort = true
             cline = null
@@ -59,29 +71,4 @@ class ClineService(project: Project) {
     fun setApiConversationHistory(history: List<MessageParam>) {
         ClineSettings.getInstance().setApiConversationHistory(clineInstanceIdentifier, history)
     }
-
-    companion object {
-        fun getSecret(key: String): String {
-            val future = CompletableFuture<String>()
-            ApplicationManager.getApplication().executeOnPooledThread {
-                val attributes = createCredentialAttributes(key)
-                val credentials = PasswordSafe.instance.get(attributes)
-                future.complete(credentials?.getPasswordAsString() ?: "")
-            }
-            return future.get()
-        }
-
-        fun storeSecret(key: String, value: String) {
-            ApplicationManager.getApplication().executeOnPooledThread {
-                val attributes = createCredentialAttributes(key)
-                val credentials = Credentials(key, value)
-                PasswordSafe.instance.set(attributes, credentials)
-            }
-        }
-
-        private fun createCredentialAttributes(key: String): CredentialAttributes {
-            return CredentialAttributes("Cline", key)
-        }
-    }
-
 }
