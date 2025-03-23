@@ -4,6 +4,8 @@ import com.anthropic.models.messages.MessageParam
 import com.github.kavos113.clinetest.settings.ClineSecretSettings
 import com.github.kavos113.clinetest.settings.ClineSettings
 import com.github.kavos113.clinetest.shared.message.ClineMessage
+import com.github.kavos113.clinetest.shared.message.ExtensionMessage
+import com.github.kavos113.clinetest.shared.message.ExtensionState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 
@@ -26,6 +28,15 @@ class ClineService(private val project: Project) {
                 project = project
             )
         }
+    }
+
+    fun postMessageToWindow(message: ExtensionMessage) {
+        project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onPostMessageToWindow(message)
+    }
+
+    fun postStateToWindow() {
+        val messages = getClineMessages()
+        postMessageToWindow(ExtensionMessage(state = ExtensionState(messages)))
     }
 
     private fun clearTask() {
