@@ -1,0 +1,15 @@
+{
+  "name": "cline-for-intellij-test",
+  "version": "1.0.0",
+  "description": "unofficial reimplementation of the [cline](https://github.com/cline/cline) for IntelliJ IDEA",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "esbuild.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "esbuild": "^0.25.1"
+  }
+}
