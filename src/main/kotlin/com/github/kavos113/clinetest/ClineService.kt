@@ -5,8 +5,10 @@ import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
 import com.intellij.ide.passwordSafe.PasswordSafe
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
 class ClineService(project: Project) {
@@ -38,15 +40,21 @@ class ClineService(project: Project) {
 
     companion object {
         fun getSecret(key: String): String {
-            val attributes = createCredentialAttributes(key)
-            val credentials = PasswordSafe.instance.get(attributes)
-            return credentials?.getPasswordAsString() ?: ""
+            val future = CompletableFuture<String>()
+            ApplicationManager.getApplication().executeOnPooledThread {
+                val attributes = createCredentialAttributes(key)
+                val credentials = PasswordSafe.instance.get(attributes)
+                future.complete(credentials?.getPasswordAsString() ?: "")
+            }
+            return future.get()
         }
 
         fun storeSecret(key: String, value: String) {
-            val attributes = createCredentialAttributes(key)
-            val credentials = Credentials(key, value)
-            PasswordSafe.instance.set(attributes, credentials)
+            ApplicationManager.getApplication().executeOnPooledThread {
+                val attributes = createCredentialAttributes(key)
+                val credentials = Credentials(key, value)
+                PasswordSafe.instance.set(attributes, credentials)
+            }
         }
 
         fun getGlobalVariable(key: String): String {
