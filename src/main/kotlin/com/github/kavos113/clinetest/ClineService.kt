@@ -1,6 +1,7 @@
 package com.github.kavos113.clinetest
 
 import com.anthropic.models.messages.MessageParam
+import com.github.kavos113.clinetest.settings.ClineSettings
 import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
@@ -12,30 +13,51 @@ import java.util.concurrent.CompletableFuture
 
 @Service(Service.Level.PROJECT)
 class ClineService(project: Project) {
-    private lateinit var cline: Cline
+    private var cline: Cline? = null
+    private val clineInstanceIdentifier: Long = System.currentTimeMillis()
 
-    fun addClineMessage(message: ClineMessage) {
+    fun clearTask() {
+        if (cline != null) {
+            cline!!.abort = true
+            cline = null
+        }
 
+        setApiConversationHistory(emptyList())
+        setClineMessages(emptyList())
+    }
+
+    fun addClineMessage(message: ClineMessage): List<ClineMessage> {
+        val messages = getClineMessages().toMutableList()
+        messages.add(message)
+        setClineMessages(messages)
+        return messages
     }
 
     fun getClineMessages(): List<ClineMessage> {
-        return emptyList()
+        return ClineSettings.getInstance().getClineMessages(clineInstanceIdentifier) ?: emptyList()
     }
 
     fun clearClineMessages() {
-
+        ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, emptyList())
     }
 
     fun setClineMessages(messages: List<ClineMessage>) {
-
+        ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, messages)
     }
 
     fun getApiConversationHistory(): List<MessageParam> {
-        return emptyList()
+        return ClineSettings.getInstance().getApiConversationHistory(clineInstanceIdentifier) ?: emptyList()
     }
 
     fun addMessageToApiConversationHistory(message: MessageParam): List<MessageParam> {
-        return emptyList()
+        val history = getApiConversationHistory().toMutableList()
+        history.add(message)
+        setApiConversationHistory(history)
+        return history
+    }
+
+    fun setApiConversationHistory(history: List<MessageParam>) {
+        ClineSettings.getInstance().setApiConversationHistory(clineInstanceIdentifier, history)
     }
 
     companion object {
@@ -55,14 +77,6 @@ class ClineService(project: Project) {
                 val credentials = Credentials(key, value)
                 PasswordSafe.instance.set(attributes, credentials)
             }
-        }
-
-        fun getGlobalVariable(key: String): String {
-            return ""
-        }
-
-        fun storeGlobalVariable(key: String, value: String) {
-
         }
 
         private fun createCredentialAttributes(key: String): CredentialAttributes {
