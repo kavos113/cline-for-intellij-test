@@ -131,7 +131,7 @@ class Cline(
     }
 
     private fun startTask(task: String) {
-        messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClineMessageClear()
+        getClineService().clearClineMessages()
 
         var userPrompt = "Task: \"$task\""
 
