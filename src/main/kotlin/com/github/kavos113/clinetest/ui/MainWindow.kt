@@ -31,9 +31,11 @@ import java.awt.BorderLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.GridLayout
+import java.awt.Point
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
+import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -57,6 +59,7 @@ class MainWindow : ToolWindowFactory {
         private var primaryButton: JButton? = null
         private var secondaryButton: JButton? = null
         private var chatPanel: JPanel? = null
+        private var chatScrollPane: JBScrollPane? = null
         private val mainPanel = JPanel(BorderLayout())
 
         private var lastChat: ChatRow? = null
@@ -74,15 +77,15 @@ class MainWindow : ToolWindowFactory {
             val inputPanel = panel {
                 row {
                     panel {
-                        row {
-                            button("add message") {
-                                if (messageCount < sampleMessages.size) {
-                                    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
-                                        .onAddClineMessage(sampleMessages[messageCount])
-                                    messageCount++
-                                }
-                            }
-                        }
+//                        row {
+//                            button("add message") {
+//                                if (messageCount < sampleMessages.size) {
+//                                    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
+//                                        .onAddClineMessage(sampleMessages[messageCount])
+//                                    messageCount++
+//                                }
+//                            }
+//                        }
                         row {
                             cell(JPanel(GridLayout(1, 2, 5, 0)))
                                 .align(AlignX.FILL)
@@ -193,10 +196,13 @@ class MainWindow : ToolWindowFactory {
 
             mainPanel.add(welcomeHeader, BorderLayout.NORTH)
             mainPanel.add(inputPanel, BorderLayout.SOUTH)
-            mainPanel.add(JBScrollPane(chatPanel).apply {
+
+            chatScrollPane = JBScrollPane(chatPanel).apply {
                 horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
                 verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-            }, BorderLayout.CENTER)
+            }
+
+            mainPanel.add(chatScrollPane!!, BorderLayout.CENTER)
 
             setEnableButton(false)
             setupMessageHandler()
@@ -371,6 +377,10 @@ class MainWindow : ToolWindowFactory {
 
             chatPanel?.revalidate()
             chatPanel?.repaint()
+
+            SwingUtilities.invokeLater {
+                chatScrollPane?.viewport?.viewPosition = Point(0, chatPanel!!.height)
+            }
         }
     }
 }

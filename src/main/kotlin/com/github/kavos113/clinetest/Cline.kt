@@ -420,7 +420,7 @@ class Cline(
             val stringBuilder = StringBuilder()
 
             val commandParts = if (System.getProperty("os.name").lowercase().contains("win")) {
-                "cmd /c $command"
+                "cmd /c $command".replace("\\", "\\\\")
             } else {
                 command
             }.split("\\s".toRegex())
@@ -435,6 +435,7 @@ class Cline(
             processHandler.addProcessListener(object : ProcessAdapter() {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     stringBuilder.append(event.text)
+                    println(event.text)
                     say(ClineSay.CommandOutput, event.text)
                 }
 

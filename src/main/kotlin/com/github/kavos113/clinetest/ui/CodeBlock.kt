@@ -52,8 +52,7 @@ class CodeBlock(
         panel.background = Color(50, 50, 50)
         panel.border = BorderFactory.createEmptyBorder(6, 10, 6, 10)
 
-        val fileName = Paths.get(path).toString()
-        val fileLabel = JLabel(fileName)
+        val fileLabel = JLabel(path)
         fileLabel.foreground = Color(187, 187, 187)
         fileLabel.font = Font(Font.MONOSPACED, Font.PLAIN, 11)
 
