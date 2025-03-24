@@ -437,6 +437,7 @@ class Cline(
             processHandler.addProcessListener(object : ProcessAdapter() {
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
                     stringBuilder.append(event.text)
+                    say(ClineSay.CommandOutput, event.text)
                 }
 
                 override fun processTerminated(event: ProcessEvent) {
