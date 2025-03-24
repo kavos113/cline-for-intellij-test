@@ -1,0 +1,63 @@
+package com.github.kavos113.clinetest.shared.anthropic
+
+import com.anthropic.core.JsonValue
+import com.anthropic.models.messages.ContentBlock
+import com.anthropic.models.messages.Message
+import com.anthropic.models.messages.Model
+import com.anthropic.models.messages.TextBlock
+import com.anthropic.models.messages.ToolUseBlock
+import com.anthropic.models.messages.Usage
+import com.fasterxml.jackson.databind.ObjectMapper
+
+val textMessage = Message.builder()
+    .content(listOf(
+        ContentBlock.ofText(
+            TextBlock.builder()
+                .text("Hello, how are you?")
+                .citations(listOf())
+                .build()
+        ),
+    ))
+    .id("")
+    .model(Model.CLAUDE_3_7_SONNET_LATEST)
+    .stopReason(Message.StopReason.END_TURN)
+    .stopSequence("")
+    .usage(
+        Usage.builder()
+            .inputTokens(20)
+            .outputTokens(10)
+            .cacheReadInputTokens(0)
+            .cacheCreationInputTokens(0)
+            .build()
+    )
+    .build()
+
+val textWithToolUse = Message.builder()
+    .content(listOf(
+        ContentBlock.ofText(
+            TextBlock.builder()
+                .text("First, let's check the status of the git repository.")
+                .citations(listOf())
+                .build()
+        ),
+        ContentBlock.ofToolUse(
+            ToolUseBlock.builder()
+                .name("execute_command")
+                .id("aaaa")
+                .input(JsonValue.fromJsonNode(ObjectMapper().readTree("{\"command\": \"git status\"}")))
+                .build()
+        )
+    ))
+    .id("")
+    .model(Model.CLAUDE_3_7_SONNET_LATEST)
+    .stopReason(Message.StopReason.END_TURN)
+    .stopSequence("")
+    .usage(
+        Usage.builder()
+            .inputTokens(20)
+            .outputTokens(10)
+            .cacheReadInputTokens(0)
+            .cacheCreationInputTokens(0)
+            .build()
+    )
+    .build()

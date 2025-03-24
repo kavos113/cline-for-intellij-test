@@ -24,6 +24,8 @@ class ChatRow(
     private val icon: JBLabel
     private val content: JPanel
 
+    private var apiTextLabel: JBLabel? = null
+
     private var isPendingApi: Boolean? = null
     private var commandCodeBlock: CodeBlock? = null
     private var isStartCommandOutput: Boolean? = null
@@ -91,7 +93,7 @@ class ChatRow(
                     ClineSay.CompletionResult -> JBLabel(AllIcons.General.InspectionsOK).apply {
                         foreground = successColor
                     }
-                    ClineSay.ApiReqStarted -> JBLabel(AllIcons.Actions.Refresh).apply {
+                    ClineSay.ApiReqStarted, ClineSay.ApiReqRetired -> JBLabel(AllIcons.Actions.Refresh).apply {
                         foreground = normalColor
                     }
                     else -> JBLabel()
@@ -101,12 +103,18 @@ class ChatRow(
 
         content = when(message.type) {
             ClineAskOrSay.Say -> when(message.say) {
-                ClineSay.ApiReqStarted -> {
+                ClineSay.ApiReqStarted, ClineSay.ApiReqRetired -> {
                     isPendingApi = true
                     panel {
                         row {
                             cell(icon)
                             cell(title)
+                        }
+                        apiTextLabel = JBLabel("").apply {
+                            foreground = normalColor
+                        }
+                        row {
+                            cell(apiTextLabel!!)
                         }
                     }
                 }
@@ -284,7 +292,7 @@ class ChatRow(
     }
 
     fun getContent(): JPanel {
-        content.border = UIUtil.getTextFieldBorder()
+//        content.border = UIUtil.getTextFieldBorder()
         return content
     }
 
@@ -306,6 +314,10 @@ class ChatRow(
             icon.foreground = errorColor
             title.text = "API Request Failed"
             title.foreground = errorColor
+
+            apiTextLabel?.text = message.text ?: "API Request Failed"
+            apiTextLabel?.foreground = errorColor
+            apiTextLabel?.revalidate()
         }
 
         content.revalidate()

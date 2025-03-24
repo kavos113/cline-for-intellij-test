@@ -13,6 +13,9 @@ import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ExtensionMessage
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -50,6 +53,7 @@ class MainWindow : ToolWindowFactory {
         private var clineAsk: ClineAsk? = null
 
         private var textArea: JBTextArea? = null
+        private var sendButton: JButton? = null
         private var primaryButton: JButton? = null
         private var secondaryButton: JButton? = null
         private var chatPanel: JPanel? = null
@@ -97,15 +101,33 @@ class MainWindow : ToolWindowFactory {
                                             }
 
                                             textArea?.isEnabled = false
+                                            sendButton?.isEnabled = false
                                             clineAsk = null
                                             setEnableButton(false)
                                         }
                                     }
                                     secondaryButton = JButton().apply {
                                         addActionListener {
+                                            textArea?.isEnabled = false
+                                            sendButton?.isEnabled = false
+
                                             when (clineAsk) {
                                                 ClineAsk.RequestLimitReached, ClineAsk.ApiReqFailed -> {
                                                     getClineService().clearTask()
+                                                    if (taskHeader != null) {
+                                                        mainPanel.remove(taskHeader!!.content)
+                                                        taskHeader = null
+                                                    }
+                                                    mainPanel.add(welcomeHeader, BorderLayout.NORTH)
+                                                    chatPanel?.removeAll()
+                                                    chatPanel?.add(JPanel(), GridBagConstraints().apply {
+                                                        gridy = 999
+                                                        weighty = 1.0
+                                                    })
+                                                    textArea?.isEnabled = true
+                                                    sendButton?.isEnabled = true
+                                                    project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
+                                                        .onResponse(ClineAskResponse.NoButtonTapped)
                                                 }
                                                 ClineAsk.Command, ClineAsk.Tool -> {
                                                     project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
@@ -114,7 +136,6 @@ class MainWindow : ToolWindowFactory {
                                                 else -> {}
                                             }
 
-                                            textArea?.isEnabled = false
                                             clineAsk = null
                                             setEnableButton(false)
                                         }
@@ -147,7 +168,7 @@ class MainWindow : ToolWindowFactory {
                                 }
                                 .component
 
-                            button("") {
+                            sendButton = button("") {
                                 handleSendMessage()
                             }.applyToComponent {
                                 icon = AllIcons.Actions.ArrowExpand
@@ -155,7 +176,7 @@ class MainWindow : ToolWindowFactory {
                                 isFocusable = true
                                 putClientProperty("JButton.buttonType", "toolBarButton")
                                 border = JBUI.Borders.empty(4)
-                            }.align(AlignY.CENTER)
+                            }.align(AlignY.CENTER).component
                         }
                     }
                 }.resizableRow()
@@ -196,6 +217,7 @@ class MainWindow : ToolWindowFactory {
                                 when (ask) {
                                     ClineAsk.RequestLimitReached -> {
                                         textArea?.isEnabled = false
+                                        sendButton?.isEnabled = false
                                         clineAsk = ClineAsk.RequestLimitReached
                                         setEnableButton(true)
                                         primaryButton?.text = "Proceed"
@@ -203,11 +225,13 @@ class MainWindow : ToolWindowFactory {
                                     }
                                     ClineAsk.Followup -> {
                                         textArea?.isEnabled = true
+                                        sendButton?.isEnabled = true
                                         clineAsk = ClineAsk.Followup
                                         setEnableButton(false)
                                     }
                                     ClineAsk.Command -> {
                                         textArea?.isEnabled = true
+                                        sendButton?.isEnabled = true
                                         clineAsk = ClineAsk.Command
                                         setEnableButton(true)
                                         primaryButton?.text = "Run Command"
@@ -215,6 +239,7 @@ class MainWindow : ToolWindowFactory {
                                     }
                                     ClineAsk.CompletionResult -> {
                                         textArea?.isEnabled = true
+                                        sendButton?.isEnabled = true
                                         clineAsk = ClineAsk.CompletionResult
                                         setEnableButton(true)
                                         primaryButton?.text = "Start New Task"
@@ -222,6 +247,7 @@ class MainWindow : ToolWindowFactory {
                                     }
                                     ClineAsk.Tool -> {
                                         textArea?.isEnabled = true
+                                        sendButton?.isEnabled = true
                                         clineAsk = ClineAsk.Tool
                                         setEnableButton(true)
                                         primaryButton?.text = "Approve"
@@ -229,6 +255,7 @@ class MainWindow : ToolWindowFactory {
                                     }
                                     ClineAsk.ApiReqFailed -> {
                                         textArea?.isEnabled = false
+                                        sendButton?.isEnabled = false
                                         clineAsk = ClineAsk.ApiReqFailed
                                         setEnableButton(true)
                                         primaryButton?.text = "Retry"
@@ -257,6 +284,7 @@ class MainWindow : ToolWindowFactory {
                     override fun onClearClineMessages() {
                         messageCount = 0
                         textArea?.isEnabled = true
+                        sendButton?.isEnabled = true
                         clineAsk = null
                         setEnableButton(false)
                         chatPanel?.removeAll()
@@ -282,7 +310,11 @@ class MainWindow : ToolWindowFactory {
                     mainPanel.revalidate()
                     mainPanel.repaint()
 
-//                    getClineService().tryToInitClineWithTask(message)
+                    ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running Cline", false) {
+                        override fun run(p0: ProgressIndicator) {
+                            getClineService().tryToInitClineWithTask(message)
+                        }
+                    })
                 } else if (clineAsk != null) {
                     when (clineAsk) {
                         ClineAsk.Followup, ClineAsk.Tool, ClineAsk.Command, ClineAsk.CompletionResult -> {
@@ -298,6 +330,7 @@ class MainWindow : ToolWindowFactory {
 
                 textArea?.text = ""
                 textArea?.isEnabled = false
+                sendButton?.isEnabled = false
                 clineAsk = null
                 setEnableButton(false)
             }
@@ -309,6 +342,7 @@ class MainWindow : ToolWindowFactory {
         }
 
         private fun addMessageToChatPanel(message: ClineMessage) {
+            println("request message: $message")
             if (lastChat?.isPendingApiRequest() == true && (message.say == ClineSay.ApiReqFinished || message.ask == ClineAsk.ApiReqFailed)) {
                 lastChat?.updateApiRequest(message)
                 return

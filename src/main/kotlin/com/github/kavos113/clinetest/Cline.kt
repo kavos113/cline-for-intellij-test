@@ -507,7 +507,7 @@ class Cline(
                 ClineAsk.ApiReqFailed,
                 "Error occurred while making an API request: ${e.message}"
             )
-            if (response == ClineAskResponse.YesButtonTapped) {
+            if (response != ClineAskResponse.YesButtonTapped) {
                 throw IllegalStateException("API request failed")
             }
 
