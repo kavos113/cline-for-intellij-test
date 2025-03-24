@@ -31,7 +31,11 @@ val sampleMessages: List<ClineMessage> = listOf(
         ts = System.currentTimeMillis() - 3900,
         type = ClineAskOrSay.Say,
         say = ClineSay.Text,
-        text = "了解しました。それでは、次のステップに進みましょう。"
+        text = "This is very very long text that should be wrapped in a JLabel. " +
+                "This is very very long text that should be wrapped in a JLabel. " +
+                "This is very very long text that should be wrapped in a JLabel. " +
+                "This is very very long text that should be wrapped in a JLabel. " +
+                "This is very very long text that should be wrapped in a JLabel. "
     ),
     ClineMessage(
         ts = System.currentTimeMillis() - 3500,

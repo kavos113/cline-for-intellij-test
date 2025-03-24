@@ -25,7 +25,7 @@ class ClineSettingsConfigurable : Configurable, Disposable {
     override fun apply() {
         ClineSecretSettings.storeSecret(ClineSecretSettings.API_KEY, component?.getApiKey() ?: "")
         ClineSettings.getInstance().state.maxRequestsPerTask = component?.maxRequestsPerTask ?: DEFAULT_MAX_REQUESTS_PER_TASK
-        println(ClineSettings.getInstance().state)
+        println("settings applied")
     }
 
     override fun getDisplayName(): String {

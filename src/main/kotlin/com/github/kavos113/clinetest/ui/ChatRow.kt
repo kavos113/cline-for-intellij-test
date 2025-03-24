@@ -15,6 +15,7 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.UIUtil
 import java.awt.Font
+import javax.swing.JEditorPane
 import javax.swing.JPanel
 
 class ChatRow(
@@ -24,7 +25,7 @@ class ChatRow(
     private val icon: JBLabel
     private val content: JPanel
 
-    private var apiTextLabel: JBLabel? = null
+    private var apiTextLabel: JEditorPane? = null
 
     private var isPendingApi: Boolean? = null
     private var commandCodeBlock: CodeBlock? = null
@@ -110,18 +111,17 @@ class ChatRow(
                             cell(icon)
                             cell(title)
                         }
-                        apiTextLabel = JBLabel("").apply {
-                            foreground = normalColor
-                        }
                         row {
-                            cell(apiTextLabel!!)
+                            apiTextLabel = text("").applyToComponent {
+                                foreground = normalColor
+                            }.component
                         }
                     }
                 }
                 ClineSay.ApiReqFinished -> panel {  }
                 ClineSay.Text, ClineSay.UserFeedback -> panel {
                     row {
-                        cell(JBLabel(message.text ?: ""))
+                        text(message.text ?: "")
                     }
                 }
                 ClineSay.Error -> panel {
@@ -130,9 +130,9 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        cell(JBLabel(message.text ?: "").apply {
+                        text(message.text ?: "").applyToComponent {
                             foreground = errorColor
-                        })
+                        }
                     }
                 }
                 ClineSay.CompletionResult -> panel {
@@ -141,7 +141,7 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        cell(JBLabel(message.text ?: ""))
+                        text(message.text ?: "")
                     }
                 }
                 else -> panel {
@@ -154,7 +154,7 @@ class ChatRow(
                         }
                     }
                     row {
-                        cell(JBLabel(message.text ?: ""))
+                        text(message.text ?: "")
                     }
                 }
             }
@@ -179,7 +179,7 @@ class ChatRow(
                                 cell(title.apply { text = "Claude wants to create a new file:" })
                             }
                             row {
-                                cell(JBLabel("Path: ${tool.path}"))
+                                text("Path: ${tool.path}")
                             }
                             row {
                                 cell(CodeBlock(tool.content, null, tool.path, true))
@@ -202,7 +202,7 @@ class ChatRow(
                                 cell(title.apply { text = "Claude wants view files in this directory:" })
                             }
                             row {
-                                cell(JBLabel("Path: ${tool.path}"))
+                                text("Path: ${tool.path}")
                             }
                             row {
                                 cell(CodeBlock(tool.content, null, tool.path, true))
@@ -215,7 +215,7 @@ class ChatRow(
                                 cell(title.apply { text = "Claude wants to analyze this project:" })
                             }
                             row {
-                                cell(JBLabel("Path: ${tool.path}"))
+                                text("Path: ${tool.path}")
                             }
                             row {
                                 cell(CodeBlock(tool.content, null, tool.path, true))
@@ -230,9 +230,9 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        cell(JBLabel(message.text ?: "").apply {
+                        text(message.text ?: "").applyToComponent {
                             foreground = errorColor
-                        })
+                        }
                     }
                 }
                 ClineAsk.Command -> panel {
@@ -258,7 +258,7 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        cell(JBLabel(message.text ?: ""))
+                        text(message.text ?: "")
                     }
                 }
                 ClineAsk.Followup -> panel {
@@ -271,7 +271,7 @@ class ChatRow(
                         }
                     }
                     row {
-                        cell(JBLabel(message.text ?: ""))
+                        text(message.text ?: "")
                     }
                 }
                 else -> panel {
@@ -284,7 +284,7 @@ class ChatRow(
                         }
                     }
                     row {
-                        cell(JBLabel(message.text ?: ""))
+                        text(message.text ?: "")
                     }
                 }
             }

@@ -24,6 +24,7 @@ import com.github.kavos113.clinetest.analyze.ProjectAnalyzer
 import com.github.kavos113.clinetest.shared.ApiRequestInfo
 import com.github.kavos113.clinetest.shared.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.ClaudeRequestResult
+import com.github.kavos113.clinetest.shared.anthropic.textWithToolUse
 import com.github.kavos113.clinetest.shared.anthropic.toContentBlockParam
 import com.github.kavos113.clinetest.shared.message.ClineAsk
 import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
@@ -494,7 +495,7 @@ class Cline(
         try {
             val params = MessageCreateParams.builder()
                 .model(Model.CLAUDE_3_HAIKU_20240307) // most cheap model
-                .maxTokens(8192L)
+                .maxTokens(4096L) // for HAIKU
                 .system(Prompt.SYSTEM_PROMPT)
                 .messages(getClineService().getApiConversationHistory())
                 .tools(Prompt.TOOLS)
