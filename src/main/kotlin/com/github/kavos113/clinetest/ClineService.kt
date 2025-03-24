@@ -47,14 +47,13 @@ class ClineService(private val project: Project) {
 
         setApiConversationHistory(emptyList())
         setClineMessages(emptyList())
-
-        postStateToWindow()
     }
 
     fun addClineMessage(message: ClineMessage): List<ClineMessage> {
         val messages = getClineMessages().toMutableList()
         messages.add(message)
         setClineMessages(messages)
+        project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onAddClineMessage(message)
         return messages
     }
 
@@ -64,6 +63,7 @@ class ClineService(private val project: Project) {
 
     fun clearClineMessages() {
         ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, emptyList())
+        project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClearClineMessages()
     }
 
     fun setClineMessages(messages: List<ClineMessage>) {

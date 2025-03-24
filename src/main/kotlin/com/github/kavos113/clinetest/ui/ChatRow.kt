@@ -16,7 +16,6 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.UIUtil
 import java.awt.Font
 import javax.swing.JPanel
-import javax.swing.SwingConstants
 
 class ChatRow(
     private val message: ClineMessage,
@@ -256,8 +255,12 @@ class ChatRow(
                 }
                 ClineAsk.Followup -> panel {
                     row {
-                        cell(icon)
-                        cell(title)
+                        if (icon.text.isNotEmpty()) {
+                            cell(icon)
+                        }
+                        if (title.text.isNotEmpty()) {
+                            cell(title)
+                        }
                     }
                     row {
                         cell(JBLabel(message.text ?: ""))

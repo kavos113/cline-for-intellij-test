@@ -1,7 +1,10 @@
 package com.github.kavos113.clinetest.ui
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.kavos113.clinetest.ClineEventListener
 import com.github.kavos113.clinetest.ClineService
+import com.github.kavos113.clinetest.shared.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.message.ClineAsk
 import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
 import com.github.kavos113.clinetest.shared.message.ClineAskResponse
@@ -50,21 +53,20 @@ class MainWindow : ToolWindowFactory {
         private var primaryButton: JButton? = null
         private var secondaryButton: JButton? = null
         private var chatPanel: JPanel? = null
+        private val mainPanel = JPanel(BorderLayout())
 
         private var lastChat: ChatRow? = null
+        private var taskHeader: TaskHeader? = null
+        private val welcomeHeader = panel {
+            row {
+                text("What can I do for you?")
+                    .bold()
+            }
+        }
 
         private fun getClineService() = project.getService(ClineService::class.java)
 
         fun getContent(): JComponent {
-            val contentPanel = panel {
-                row {
-                    text("What can I do for you?")
-                        .bold()
-                }
-            }
-
-            val mainPanel = JPanel(BorderLayout())
-
             val inputPanel = panel {
                 row {
                     panel {
@@ -168,14 +170,14 @@ class MainWindow : ToolWindowFactory {
                 })
             }
 
-            mainPanel.add(contentPanel, BorderLayout.NORTH)
+            mainPanel.add(welcomeHeader, BorderLayout.NORTH)
             mainPanel.add(inputPanel, BorderLayout.SOUTH)
             mainPanel.add(JBScrollPane(chatPanel).apply {
                 horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
                 verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             }, BorderLayout.CENTER)
 
-            setEnableButton(true)
+            setEnableButton(false)
             setupMessageHandler()
 
             return mainPanel
@@ -185,61 +187,9 @@ class MainWindow : ToolWindowFactory {
             project.messageBus.connect().subscribe(
                 ClineEventListener.CLINE_EVENT_TOPIC,
                 object : ClineEventListener {
-                    override fun onPostMessageToWindow(message: ExtensionMessage) {
-                        val lastMessage = message.state?.clineMessages?.lastOrNull()
-                        if (lastMessage != null) {
-                            when (lastMessage.type) {
-                                ClineAskOrSay.Ask -> {
-                                    val ask = lastMessage.ask!!
-                                    when (ask) {
-                                        ClineAsk.RequestLimitReached -> {
-                                            textArea?.isEnabled = false
-                                            clineAsk = ClineAsk.RequestLimitReached
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Proceed"
-                                            secondaryButton?.text = "Start New Task"
-                                        }
-                                        ClineAsk.Followup -> {
-                                            textArea?.isEnabled = true
-                                            clineAsk = ClineAsk.Followup
-                                            setEnableButton(false)
-                                        }
-                                        ClineAsk.Command -> {
-                                            textArea?.isEnabled = true
-                                            clineAsk = ClineAsk.Command
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Run Command"
-                                            secondaryButton?.text = "Reject"
-                                        }
-                                        ClineAsk.CompletionResult -> {
-                                            textArea?.isEnabled = true
-                                            clineAsk = ClineAsk.CompletionResult
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Start New Task"
-                                            secondaryButton?.isVisible = false
-                                        }
-                                        ClineAsk.Tool -> {
-                                            textArea?.isEnabled = true
-                                            clineAsk = ClineAsk.Tool
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Approve"
-                                            secondaryButton?.text = "Reject"
-                                        }
-                                        ClineAsk.ApiReqFailed -> {
-                                            textArea?.isEnabled = false
-                                            clineAsk = ClineAsk.ApiReqFailed
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Retry"
-                                            secondaryButton?.text = "Start New Task"
-                                        }
-                                    }
-                                }
-                                ClineAskOrSay.Say -> {}
-                            }
-                        }
-                    }
 
                     override fun onAddClineMessage(message: ClineMessage) {
+                        setEnableButton(false)
                         when (message.type) {
                             ClineAskOrSay.Ask -> {
                                 val ask = message.ask!!
@@ -286,10 +236,36 @@ class MainWindow : ToolWindowFactory {
                                     }
                                 }
                             }
-                            ClineAskOrSay.Say -> {}
+                            ClineAskOrSay.Say -> {
+                                when(message.say) {
+                                    ClineSay.ApiReqFinished -> {
+                                        val info = jacksonObjectMapper().readValue<ApiTokenInfo>(message.text!!)
+                                        taskHeader?.addApiInfo(info)
+                                    }
+                                    else -> {}
+                                }
+                            }
                         }
 
                         addMessageToChatPanel(message)
+                    }
+
+                    override fun onPostMessageToWindow(message: ExtensionMessage) {
+
+                    }
+
+                    override fun onClearClineMessages() {
+                        messageCount = 0
+                        textArea?.isEnabled = true
+                        clineAsk = null
+                        setEnableButton(false)
+                        chatPanel?.removeAll()
+                        chatPanel?.add(JPanel(), GridBagConstraints().apply {
+                            gridy = 999
+                            weighty = 1.0
+                        })
+                        chatPanel?.revalidate()
+                        chatPanel?.repaint()
                     }
                 }
             )
@@ -300,7 +276,13 @@ class MainWindow : ToolWindowFactory {
 
             if (message?.isNotEmpty() == true) {
                 if (messageCount == 0) {
-                    getClineService().tryToInitClineWithTask(message)
+                    taskHeader = TaskHeader(message)
+                    mainPanel.remove(welcomeHeader)
+                    mainPanel.add(taskHeader!!.content, BorderLayout.NORTH)
+                    mainPanel.revalidate()
+                    mainPanel.repaint()
+
+//                    getClineService().tryToInitClineWithTask(message)
                 } else if (clineAsk != null) {
                     when (clineAsk) {
                         ClineAsk.Followup, ClineAsk.Tool, ClineAsk.Command, ClineAsk.CompletionResult -> {

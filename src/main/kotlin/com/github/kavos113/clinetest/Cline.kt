@@ -95,7 +95,6 @@ class Cline(
             ask = type,
             text = question
         ))
-        getClineService().postStateToWindow()
 
         val latch = CountDownLatch(1)
         val connection = messageBus.connect()
@@ -129,12 +128,10 @@ class Cline(
             say = type,
             text = text
         ))
-        getClineService().postStateToWindow()
     }
 
     private fun startTask(task: String) {
         getClineService().clearClineMessages()
-        getClineService().postStateToWindow()
 
         var userPrompt = "Task: \"$task\""
 

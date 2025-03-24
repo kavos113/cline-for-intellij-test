@@ -1,6 +1,7 @@
 package com.github.kavos113.clinetest.ui
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.kavos113.clinetest.shared.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.message.ClineAsk
 import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
 import com.github.kavos113.clinetest.shared.message.ClineMessage
@@ -17,7 +18,14 @@ val sampleMessages: List<ClineMessage> = listOf(
     ClineMessage(
         ts = System.currentTimeMillis() - 4000,
         type = ClineAskOrSay.Say,
-        say = ClineSay.ApiReqFinished
+        say = ClineSay.ApiReqFinished,
+        text = jacksonObjectMapper().writeValueAsString(
+            ApiTokenInfo(
+                tokensIn = 100,
+                tokensOut = 50,
+                cost = 0.24
+            )
+        )
     ),
     ClineMessage(
         ts = System.currentTimeMillis() - 3900,
