@@ -13,7 +13,19 @@ val textMessage = Message.builder()
     .content(listOf(
         ContentBlock.ofText(
             TextBlock.builder()
-                .text("Hello, how are you?")
+                .text("""Hi, I am a software engineer. I can help you with your code.
+## Overview
+- I can help you with your code.
+- I can help you with your code.
+- I can help you with your code.
+
+## Code
+```python
+def hello_world():
+    print("Hello, world!")
+hello_world()
+```
+                """.trimIndent())
                 .citations(listOf())
                 .build()
         ),

@@ -24,6 +24,7 @@ import com.github.kavos113.clinetest.analyze.ProjectAnalyzer
 import com.github.kavos113.clinetest.shared.ApiRequestInfo
 import com.github.kavos113.clinetest.shared.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.ClaudeRequestResult
+import com.github.kavos113.clinetest.shared.anthropic.textMessage
 import com.github.kavos113.clinetest.shared.anthropic.textWithToolUse
 import com.github.kavos113.clinetest.shared.anthropic.toContentBlockParam
 import com.github.kavos113.clinetest.shared.message.ClineAsk
@@ -503,7 +504,9 @@ class Cline(
                 .toolChoice(ToolChoiceAuto.builder().type(JsonValue.from("auto")).build())
                 .build()
 
-            return anthropicClient.messages().create(params)
+            Thread.sleep(2000)
+//            return anthropicClient.messages().create(params)
+            return textMessage
         } catch (e: AnthropicException) {
             val (response, _) = ask(
                 ClineAsk.ApiReqFailed,

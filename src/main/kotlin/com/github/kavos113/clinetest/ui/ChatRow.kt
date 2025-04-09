@@ -67,6 +67,7 @@ class ChatRow(
                 }
             }
         }
+
         title.apply {
             font = font.deriveFont(Font.BOLD)
         }
