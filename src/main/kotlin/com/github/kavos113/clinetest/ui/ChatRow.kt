@@ -122,7 +122,8 @@ class ChatRow(
                 ClineSay.ApiReqFinished -> panel {  }
                 ClineSay.Text, ClineSay.UserFeedback -> panel {
                     row {
-                        text(message.text ?: "")
+                        cell(MarkdownPanel(message.text ?: ""))
+                            .align(AlignX.FILL)
                     }
                 }
                 ClineSay.Error -> panel {
@@ -142,7 +143,8 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        text(message.text ?: "")
+                        cell(MarkdownPanel(message.text ?: ""))
+                            .align(AlignX.FILL)
                     }
                 }
                 else -> panel {
@@ -155,7 +157,8 @@ class ChatRow(
                         }
                     }
                     row {
-                        text(message.text ?: "")
+                        cell(MarkdownPanel(message.text ?: ""))
+                            .align(AlignX.FILL)
                     }
                 }
             }
@@ -259,7 +262,8 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        text(message.text ?: "")
+                        cell(MarkdownPanel(message.text ?: ""))
+                            .align(AlignX.FILL)
                     }
                 }
                 ClineAsk.Followup -> panel {
@@ -272,7 +276,8 @@ class ChatRow(
                         }
                     }
                     row {
-                        text(message.text ?: "")
+                        cell(MarkdownPanel(message.text ?: ""))
+                            .align(AlignX.FILL)
                     }
                 }
                 else -> panel {
@@ -285,7 +290,8 @@ class ChatRow(
                         }
                     }
                     row {
-                        text(message.text ?: "")
+                        cell(MarkdownPanel(message.text ?: ""))
+                            .align(AlignX.FILL)
                     }
                 }
             }

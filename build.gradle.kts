@@ -29,6 +29,9 @@ dependencies {
         val version = providers.gradleProperty("platformVersion").get()
 
         create(type, version)
+
+        bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
+        plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
     }
 }
 
