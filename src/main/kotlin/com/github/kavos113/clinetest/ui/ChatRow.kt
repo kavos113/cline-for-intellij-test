@@ -8,6 +8,9 @@ import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ClineSayTool
 import com.github.kavos113.clinetest.shared.message.ClineSayTools
+import com.github.kavos113.clinetest.ui.chat.ClineSayApi
+import com.github.kavos113.clinetest.ui.chat.CodeBlock
+import com.github.kavos113.clinetest.ui.chat.MarkdownPanel
 import com.intellij.icons.AllIcons
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
@@ -15,7 +18,6 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.UIUtil
 import java.awt.Font
-import javax.swing.JEditorPane
 import javax.swing.JPanel
 
 class ChatRow(
@@ -23,9 +25,9 @@ class ChatRow(
 ) {
     private val title: JBLabel
     private val icon: JBLabel
-    private val content: JPanel
+    val content: JPanel
 
-    private var apiTextLabel: JEditorPane? = null
+    private val apiPanel: ClineSayApi? by lazy { ClineSayApi(message.say) }
 
     private var isPendingApi: Boolean? = null
     private var commandCodeBlock: CodeBlock? = null
@@ -36,7 +38,6 @@ class ChatRow(
     private val successColor = JBColor.GREEN
 
     init {
-
         title = when (message.type) {
             ClineAskOrSay.Ask -> {
                 when (message.ask) {
@@ -59,9 +60,6 @@ class ChatRow(
                     }
                     ClineSay.CompletionResult -> JBLabel("Task Completed").apply {
                         foreground = successColor
-                    }
-                    ClineSay.ApiReqStarted -> JBLabel("Making API Request...").apply {
-                        foreground = normalColor
                     }
                     else -> JBLabel()
                 }
@@ -95,9 +93,6 @@ class ChatRow(
                     ClineSay.CompletionResult -> JBLabel(AllIcons.General.InspectionsOK).apply {
                         foreground = successColor
                     }
-                    ClineSay.ApiReqStarted, ClineSay.ApiReqRetired -> JBLabel(AllIcons.Actions.Refresh).apply {
-                        foreground = normalColor
-                    }
                     else -> JBLabel()
                 }
             }
@@ -109,22 +104,13 @@ class ChatRow(
                     isPendingApi = true
                     panel {
                         row {
-                            cell(icon)
-                            cell(title)
-                        }
-                        row {
-                            apiTextLabel = text("").applyToComponent {
-                                foreground = normalColor
-                            }.component
+                            cell(apiPanel?.content?: JBLabel())
+                                .align(AlignX.FILL)
                         }
                     }
                 }
-                ClineSay.ApiReqFinished -> panel {  }
-                ClineSay.Text, ClineSay.UserFeedback -> panel {
-                    row {
-                        cell(MarkdownPanel(message.text ?: ""))
-                            .align(AlignX.FILL)
-                    }
+                ClineSay.Text, ClineSay.UserFeedback -> JPanel().apply {
+                    add(MarkdownPanel(message.text ?: ""))
                 }
                 ClineSay.Error -> panel {
                     row {
@@ -268,14 +254,7 @@ class ChatRow(
                 }
                 ClineAsk.Followup -> panel {
                     row {
-                        if (icon.text.isNotEmpty()) {
-                            cell(icon)
-                        }
-                        if (title.text.isNotEmpty()) {
-                            cell(title)
-                        }
-                    }
-                    row {
+                        cell(JBLabel("This is a followup message"))
                         cell(MarkdownPanel(message.text ?: ""))
                             .align(AlignX.FILL)
                     }
@@ -296,37 +275,21 @@ class ChatRow(
                 }
             }
         }
-    }
 
-    fun getContent(): JPanel {
-//        content.border = UIUtil.getTextFieldBorder()
-        return content
+        content.border = UIUtil.getTextFieldBorder()
     }
 
     fun isPendingApiRequest(): Boolean {
         return isPendingApi == true
     }
 
+    // bool返すにするか
     fun updateApiRequest(message: ClineMessage) {
         if (isPendingApi != true || (message.say != ClineSay.ApiReqFinished && message.ask != ClineAsk.ApiReqFailed)) {
             return
         }
 
-        if (message.say == ClineSay.ApiReqFinished) {
-            icon.icon = AllIcons.General.InspectionsOK
-            icon.foreground = successColor
-            title.text = "API Request Complete"
-        } else {
-            icon.icon = AllIcons.General.Error
-            icon.foreground = errorColor
-            title.text = "API Request Failed"
-            title.foreground = errorColor
-
-            apiTextLabel?.text = message.text ?: "API Request Failed"
-            apiTextLabel?.foreground = errorColor
-            apiTextLabel?.revalidate()
-        }
-
+        apiPanel?.updateApiRequest(message)
         content.revalidate()
     }
 

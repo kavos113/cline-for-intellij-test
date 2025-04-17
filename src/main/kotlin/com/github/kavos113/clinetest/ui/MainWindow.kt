@@ -77,15 +77,15 @@ class MainWindow : ToolWindowFactory {
             val inputPanel = panel {
                 row {
                     panel {
-//                        row {
-//                            button("add message") {
-//                                if (messageCount < sampleMessages.size) {
-//                                    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
-//                                        .onAddClineMessage(sampleMessages[messageCount])
-//                                    messageCount++
-//                                }
-//                            }
-//                        }
+                        row {
+                            button("add message") {
+                                if (messageCount < sampleMessages.size) {
+                                    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
+                                        .onAddClineMessage(sampleMessages[messageCount])
+                                    messageCount++
+                                }
+                            }
+                        }
                         row {
                             cell(JPanel(GridLayout(1, 2, 5, 0)))
                                 .align(AlignX.FILL)
@@ -362,7 +362,7 @@ class MainWindow : ToolWindowFactory {
             chatPanel?.remove(chatPanel?.componentCount?.minus(1) ?: 0)
 
             lastChat = ChatRow(message)
-            chatPanel?.add(lastChat!!.getContent(), GridBagConstraints().apply {
+            chatPanel?.add(lastChat!!.content, GridBagConstraints().apply {
                 gridx = 0
                 gridy = chatPanel?.componentCount ?: 0
                 weightx = 1.0

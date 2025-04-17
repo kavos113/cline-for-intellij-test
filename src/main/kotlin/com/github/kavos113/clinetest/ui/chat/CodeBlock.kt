@@ -1,12 +1,10 @@
-package com.github.kavos113.clinetest.ui
+package com.github.kavos113.clinetest.ui.chat
 
 import java.awt.BorderLayout
 import java.awt.Color
-import java.awt.Dimension
 import java.awt.Font
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.nio.file.Paths
 import javax.swing.BorderFactory
 import javax.swing.JComponent
 import javax.swing.JEditorPane

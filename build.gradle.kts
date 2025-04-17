@@ -23,6 +23,7 @@ dependencies {
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
     implementation("io.github.tree-sitter:ktreesitter:0.24.1")
+    implementation("com.vladsch.flexmark:flexmark-all:0.64.8")
 
     intellijPlatform {
         val type = providers.gradleProperty("platformType").get()

@@ -31,11 +31,21 @@ val sampleMessages: List<ClineMessage> = listOf(
         ts = System.currentTimeMillis() - 3900,
         type = ClineAskOrSay.Say,
         say = ClineSay.Text,
-        text = "This is very very long text that should be wrapped in a JLabel. " +
-                "This is very very long text that should be wrapped in a JLabel. " +
-                "This is very very long text that should be wrapped in a JLabel. " +
-                "This is very very long text that should be wrapped in a JLabel. " +
-                "This is very very long text that should be wrapped in a JLabel. "
+        text = """
+# Markdown Example
+## Sample Code
+```kotlin
+fun main() {
+    println("Hello, World!")
+}
+```
+
+## Sample Text
+This is a sample text.
+- Item 1
+- Item 2
+- Item 3
+        """
     ),
     ClineMessage(
         ts = System.currentTimeMillis() - 3500,
