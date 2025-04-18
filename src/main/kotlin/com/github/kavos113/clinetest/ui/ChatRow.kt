@@ -254,7 +254,6 @@ class ChatRow(
                 }
                 ClineAsk.Followup -> panel {
                     row {
-                        cell(JBLabel("This is a followup message"))
                         cell(MarkdownPanel(message.text ?: ""))
                             .align(AlignX.FILL)
                     }
@@ -299,7 +298,7 @@ class ChatRow(
 
     fun addCommandOutput(message: ClineMessage) {
         if (isStartCommandOutput == false) {
-            commandCodeBlock?.addPath(commandCodeBlock?.code?: "")
+//            commandCodeBlock?.addPath(commandCodeBlock?.code?: "")
             commandCodeBlock?.setCode(message.text?: "")
             isStartCommandOutput = true
             return
