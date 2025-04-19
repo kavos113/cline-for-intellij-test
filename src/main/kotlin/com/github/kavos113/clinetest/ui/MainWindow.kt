@@ -13,6 +13,7 @@ import com.github.kavos113.clinetest.shared.message.ClineMessage
 import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ExtensionMessage
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -379,7 +380,9 @@ class MainWindow : ToolWindowFactory {
             chatPanel?.repaint()
 
             SwingUtilities.invokeLater {
-                chatScrollPane?.viewport?.viewPosition = Point(0, chatPanel!!.height)
+                ApplicationManager.getApplication().runReadAction {
+                    chatScrollPane?.viewport?.viewPosition = Point(0, chatPanel!!.height)
+                }
             }
         }
     }

@@ -31,23 +31,20 @@ class CodeBlock(
 
     init {
         val document = EditorFactory.getInstance().createDocument(code ?: diff ?: "")
-        val fileType = ApplicationManager.getApplication().runReadAction<FileType> {
-            if (diff == null) {
-                getFileTypes(path?.substringAfterLast(".") ?: "txt")
-            } else {
-                FileTypes.PLAIN_TEXT
-            }
+        val fileType = if (diff == null) {
+            getFileTypes(path?.substringAfterLast(".") ?: "txt")
+        } else {
+            FileTypes.PLAIN_TEXT
         }
+
 
         field = EditorTextField(document, project, fileType, true, false).apply {
             addSettingsProvider { editorEx ->
-                ApplicationManager.getApplication().runReadAction {
-                    editorEx.colorsScheme = EditorColorsManager.getInstance().globalScheme
+                editorEx.colorsScheme = EditorColorsManager.getInstance().globalScheme
 
-                    if (diff != null) {
-                        text = diff
-                        setDiff(diff, editorEx)
-                    }
+                if (diff != null) {
+                    text = diff
+                    setDiff(diff, editorEx)
                 }
             }
         }
@@ -80,28 +77,22 @@ class CodeBlock(
     private fun addHighlight(editor: Editor, startOffset: Int, endOffset: Int, color: JBColor) {
         val attributes = TextAttributes()
         attributes.backgroundColor = color
-        ApplicationManager.getApplication().runReadAction {
-            editor.markupModel.addRangeHighlighter(
-                startOffset,
-                endOffset,
-                HighlighterLayer.ADDITIONAL_SYNTAX,
-                attributes,
-                HighlighterTargetArea.LINES_IN_RANGE
-            )
-        }
+        editor.markupModel.addRangeHighlighter(
+            startOffset,
+            endOffset,
+            HighlighterLayer.ADDITIONAL_SYNTAX,
+            attributes,
+            HighlighterTargetArea.LINES_IN_RANGE
+        )
     }
 
     fun setCode(code: String?) {
-        ApplicationManager.getApplication().runWriteAction {
-            field.text = code ?: ""
-            field.revalidate()
-        }
+        field.text = code ?: ""
+        field.revalidate()
     }
 
     fun addCode(code: String?) {
-        ApplicationManager.getApplication().runWriteAction {
-            field.text += "\n$code"
-            field.revalidate()
-        }
+        field.text += "\n$code"
+        field.revalidate()
     }
 }

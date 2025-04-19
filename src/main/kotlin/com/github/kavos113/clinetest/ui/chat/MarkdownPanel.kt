@@ -47,10 +47,9 @@ class MarkdownPanel(
         val contents = content.split("```")
 
         contents.forEachIndexed { i, s ->
-            if (s.isEmpty()) {
+            if (s.trim().isEmpty()) {
                 return@forEachIndexed
             }
-            println(s)
             if (i % 2 == 0) {
                 val htmlContent = renderer.render(parser.parse(s))
                 val editorPane = createEditorPane(htmlContent)
