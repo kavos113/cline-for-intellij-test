@@ -79,13 +79,13 @@ class MainWindow : ToolWindowFactory {
         row {
           panel {
             row {
-              button("add message") {
-                if (messageCount < sampleMessages.size) {
-                  project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
-                    .onAddClineMessage(sampleMessages[messageCount])
-                  messageCount++
-                }
-              }
+//              button("add message") {
+//                if (messageCount < sampleMessages.size) {
+//                  project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
+//                    .onAddClineMessage(sampleMessages[messageCount])
+//                  messageCount++
+//                }
+//              }
             }
             row {
               cell(JPanel(GridLayout(1, 2, 5, 0)))

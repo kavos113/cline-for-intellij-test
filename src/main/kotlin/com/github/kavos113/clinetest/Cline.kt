@@ -543,38 +543,12 @@ class Cline(
         .build()
     )
 
-    if (requestCount >= maxRequestsPerTask) {
-      val (response, _) = ask(
-        ClineAsk.RequestLimitReached,
-        "Claude Dev has reached the maximum number of requests for this task. Would you like to reset the count and allow him to proceed?"
+    if (finishByRequestCount()) {
+      return ClaudeRequestResult(
+        didEndLoop = true,
+        inputTokens = 0,
+        outputTokens = 0
       )
-
-      if (response == ClineAskResponse.YesButtonTapped) {
-        requestCount = 0
-      } else {
-        getClineService().addMessageToApiConversationHistory(
-          MessageParam.builder()
-            .role(MessageParam.Role.ASSISTANT)
-            .content(
-              MessageParam.Content.ofBlockParams(
-                listOf(
-                  ContentBlockParam.ofText(
-                    TextBlockParam.builder()
-                      .text("Failure: I have reached the request limit for this task. Do you have a new task for me?")
-                      .build()
-                  )
-                )
-              )
-            )
-            .build()
-        )
-
-        return ClaudeRequestResult(
-          didEndLoop = true,
-          inputTokens = 0,
-          outputTokens = 0
-        )
-      }
     }
 
     say(
@@ -622,7 +596,7 @@ class Cline(
         }
       }
 
-      var toolResults: MutableList<ToolResultBlockParam> = mutableListOf()
+      val toolResults: MutableList<ToolResultBlockParam> = mutableListOf()
       var attemptCompletionBlock: ToolUseBlock? = null
       for (contentBlock in response.content()) {
         contentBlock.toolUse().ifPresent {
@@ -681,8 +655,8 @@ class Cline(
 
       if (attemptCompletionBlock != null) {
         var result = executeTool(
-          ToolName.fromString(attemptCompletionBlock!!.name()),
-          attemptCompletionBlock!!._input().convert(ToolInput::class.java)!!
+          ToolName.fromString(attemptCompletionBlock.name()),
+          attemptCompletionBlock._input().convert(ToolInput::class.java)!!
         )
 
         if (result == "") {
@@ -692,7 +666,7 @@ class Cline(
         toolResults.add(
           ToolResultBlockParam.builder()
             .type(JsonValue.from("tool_result"))
-            .toolUseId(attemptCompletionBlock!!.id())
+            .toolUseId(attemptCompletionBlock.id())
             .content(result)
             .build()
         )
@@ -747,5 +721,39 @@ class Cline(
         outputTokens = 0
       )
     }
+  }
+
+  internal fun finishByRequestCount(): Boolean {
+    if (requestCount < maxRequestsPerTask) return false
+
+    val (response, _) = ask(
+      ClineAsk.RequestLimitReached,
+      "Claude Dev has reached the maximum number of requests for this task. Would you like to reset the count and allow him to proceed?"
+    )
+
+    if (response == ClineAskResponse.YesButtonTapped) {
+      requestCount = 0
+    } else {
+      getClineService().addMessageToApiConversationHistory(
+        MessageParam.builder()
+          .role(MessageParam.Role.ASSISTANT)
+          .content(
+            MessageParam.Content.ofBlockParams(
+              listOf(
+                ContentBlockParam.ofText(
+                  TextBlockParam.builder()
+                    .text("Failure: I have reached the request limit for this task. Do you have a new task for me?")
+                    .build()
+                )
+              )
+            )
+          )
+          .build()
+      )
+
+      return true
+    }
+
+    return false
   }
 }
