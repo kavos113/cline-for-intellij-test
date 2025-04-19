@@ -361,7 +361,7 @@ class MainWindow : ToolWindowFactory {
 
             chatPanel?.remove(chatPanel?.componentCount?.minus(1) ?: 0)
 
-            lastChat = ChatRow(message)
+            lastChat = ChatRow(message, project)
             chatPanel?.add(lastChat!!.content, GridBagConstraints().apply {
                 gridx = 0
                 gridy = chatPanel?.componentCount ?: 0

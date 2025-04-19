@@ -7,6 +7,7 @@ import com.intellij.util.ui.JBFont
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import org.intellij.plugins.markdown.ui.preview.html.MarkdownUtil
+import java.awt.GridLayout
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import javax.swing.text.html.HTMLEditorKit
@@ -31,7 +32,7 @@ hello_world()
 
 class MarkdownPanel(
     content: String
-): JPanel() {
+): JPanel(GridLayout(1, 1)) {
     private val editorPane: JEditorPane
 
     init {

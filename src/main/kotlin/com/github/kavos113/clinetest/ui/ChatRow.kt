@@ -12,6 +12,7 @@ import com.github.kavos113.clinetest.ui.chat.ClineSayApi
 import com.github.kavos113.clinetest.ui.chat.CodeBlock
 import com.github.kavos113.clinetest.ui.chat.MarkdownPanel
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.dsl.builder.AlignX
@@ -22,6 +23,7 @@ import javax.swing.JPanel
 
 class ChatRow(
     private val message: ClineMessage,
+    project: Project
 ) {
     private val title: JBLabel
     private val icon: JBLabel
@@ -159,7 +161,7 @@ class ChatRow(
                                 cell(title.apply { text = "Claude wants to edit this file:" })
                             }
                             row {
-                                cell(CodeBlock(null, tool.diff, tool.path, true))
+                                cell(CodeBlock(null, tool.diff, tool.path, true, project))
                                     .align(AlignX.FILL)
                             }
                         }
@@ -172,7 +174,7 @@ class ChatRow(
                                 text("Path: ${tool.path}")
                             }
                             row {
-                                cell(CodeBlock(tool.content, null, tool.path, true))
+                                cell(CodeBlock(tool.content, null, tool.path, true, project))
                                     .align(AlignX.FILL)
                             }
                         }
@@ -182,7 +184,7 @@ class ChatRow(
                                 cell(title.apply { text = "Claude wants to read this file:" })
                             }
                             row {
-                                cell(CodeBlock(tool.content, null, tool.path, true))
+                                cell(CodeBlock(tool.content, null, tool.path, true, project))
                                     .align(AlignX.FILL)
                             }
                         }
@@ -195,7 +197,7 @@ class ChatRow(
                                 text("Path: ${tool.path}")
                             }
                             row {
-                                cell(CodeBlock(tool.content, null, tool.path, true))
+                                cell(CodeBlock(tool.content, null, tool.path, true, project))
                                     .align(AlignX.FILL)
                             }
                         }
@@ -208,7 +210,7 @@ class ChatRow(
                                 text("Path: ${tool.path}")
                             }
                             row {
-                                cell(CodeBlock(tool.content, null, tool.path, true))
+                                cell(CodeBlock(tool.content, null, tool.path, true, project))
                                     .align(AlignX.FILL)
                             }
                         }
@@ -235,7 +237,8 @@ class ChatRow(
                             code = message.text,
                             diff = null,
                             path = null,
-                            isExpanded = true
+                            isExpanded = true,
+                            project
                         )
                         isStartCommandOutput = false
                         cell(commandCodeBlock!!)

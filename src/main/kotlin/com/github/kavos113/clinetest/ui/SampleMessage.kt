@@ -111,10 +111,17 @@ This is a sample text.
         text = jacksonObjectMapper().writeValueAsString(
             ClineSayTool(
                 tool = ClineSayTools.NewFileCreated,
-                path = "./src/hello.kt",
+                path = "./src/hello.java",
                 content = """
-                    fun main() {
-                        println("Hello, World!")
+                    class HelloWorld {
+                        public static void main(String[] args) {
+                            System.out.println("Hello, world!");
+                        }
+                        
+                        private String name;
+                        public HelloWorld(String name) {
+                            this.name = name;
+                        }
                     }
                 """.trimIndent()
             )

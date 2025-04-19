@@ -1,6 +1,7 @@
 package com.github.kavos113.clinetest.ui.chat
 
 import com.intellij.diff.editor.DiffFileType
+import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -22,17 +23,21 @@ class CodeBlock(
     diff: String? = null,
     path: String? = null,
     private var isExpanded: Boolean = true,
-    project: Project? = null
+    project: Project
 ) : JPanel(BorderLayout()) {
 
     private val field: EditorTextField
 
     init {
-        val document = EditorFactory.getInstance().createDocument(code ?: "")
-        field = EditorTextField(document, project, FileTypes.PLAIN_TEXT, true, false).apply {
+        val document = EditorFactory.getInstance().createDocument(code ?: diff ?: "")
+        val fileType = if (diff == null) {
+            getFileTypes(path?.substringAfterLast(".") ?: "txt")
+        } else {
+            FileTypes.PLAIN_TEXT
+        }
+        field = EditorTextField(document, project, fileType, true, false).apply {
             addSettingsProvider { editorEx ->
                 editorEx.colorsScheme = EditorColorsManager.getInstance().globalScheme
-                fileType = getFileTypes(path?.substringAfterLast(".") ?: "txt")
 
                 if (diff != null) {
                     text = diff
