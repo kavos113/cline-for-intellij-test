@@ -14,6 +14,4 @@ node esbuild.js
 ```
 
 ## known issues
-- no support for markdown
-- cannot "start new task"
 - not change project path when changing project
