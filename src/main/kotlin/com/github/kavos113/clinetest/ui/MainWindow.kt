@@ -217,70 +217,71 @@ class MainWindow : ToolWindowFactory {
                 object : ClineEventListener {
 
                     override fun onAddClineMessage(message: ClineMessage) {
-                        setEnableButton(false)
-                        when (message.type) {
-                            ClineAskOrSay.Ask -> {
-                                val ask = message.ask!!
-                                when (ask) {
-                                    ClineAsk.RequestLimitReached -> {
-                                        textArea?.isEnabled = false
-                                        sendButton?.isEnabled = false
-                                        clineAsk = ClineAsk.RequestLimitReached
-                                        setEnableButton(true)
-                                        primaryButton?.text = "Proceed"
-                                        secondaryButton?.text = "Start New Task"
-                                    }
-                                    ClineAsk.Followup -> {
-                                        textArea?.isEnabled = true
-                                        sendButton?.isEnabled = true
-                                        clineAsk = ClineAsk.Followup
-                                        setEnableButton(false)
-                                    }
-                                    ClineAsk.Command -> {
-                                        textArea?.isEnabled = true
-                                        sendButton?.isEnabled = true
-                                        clineAsk = ClineAsk.Command
-                                        setEnableButton(true)
-                                        primaryButton?.text = "Run Command"
-                                        secondaryButton?.text = "Reject"
-                                    }
-                                    ClineAsk.CompletionResult -> {
-                                        textArea?.isEnabled = true
-                                        sendButton?.isEnabled = true
-                                        clineAsk = ClineAsk.CompletionResult
-                                        setEnableButton(true)
-                                        primaryButton?.text = "Start New Task"
-                                        secondaryButton?.isVisible = false
-                                    }
-                                    ClineAsk.Tool -> {
-                                        textArea?.isEnabled = true
-                                        sendButton?.isEnabled = true
-                                        clineAsk = ClineAsk.Tool
-                                        setEnableButton(true)
-                                        primaryButton?.text = "Approve"
-                                        secondaryButton?.text = "Reject"
-                                    }
-                                    ClineAsk.ApiReqFailed -> {
-                                        textArea?.isEnabled = false
-                                        sendButton?.isEnabled = false
-                                        clineAsk = ClineAsk.ApiReqFailed
-                                        setEnableButton(true)
-                                        primaryButton?.text = "Retry"
-                                        secondaryButton?.text = "Start New Task"
+                        SwingUtilities.invokeLater {
+                            setEnableButton(false)
+                            when (message.type) {
+                                ClineAskOrSay.Ask -> {
+                                    val ask = message.ask!!
+                                    when (ask) {
+                                        ClineAsk.RequestLimitReached -> {
+                                            textArea?.isEnabled = false
+                                            sendButton?.isEnabled = false
+                                            clineAsk = ClineAsk.RequestLimitReached
+                                            setEnableButton(true)
+                                            primaryButton?.text = "Proceed"
+                                            secondaryButton?.text = "Start New Task"
+                                        }
+                                        ClineAsk.Followup -> {
+                                            textArea?.isEnabled = true
+                                            sendButton?.isEnabled = true
+                                            clineAsk = ClineAsk.Followup
+                                            setEnableButton(false)
+                                        }
+                                        ClineAsk.Command -> {
+                                            textArea?.isEnabled = true
+                                            sendButton?.isEnabled = true
+                                            clineAsk = ClineAsk.Command
+                                            setEnableButton(true)
+                                            primaryButton?.text = "Run Command"
+                                            secondaryButton?.text = "Reject"
+                                        }
+                                        ClineAsk.CompletionResult -> {
+                                            textArea?.isEnabled = true
+                                            sendButton?.isEnabled = true
+                                            clineAsk = ClineAsk.CompletionResult
+                                            setEnableButton(true)
+                                            primaryButton?.text = "Start New Task"
+                                            secondaryButton?.isVisible = false
+                                        }
+                                        ClineAsk.Tool -> {
+                                            textArea?.isEnabled = true
+                                            sendButton?.isEnabled = true
+                                            clineAsk = ClineAsk.Tool
+                                            setEnableButton(true)
+                                            primaryButton?.text = "Approve"
+                                            secondaryButton?.text = "Reject"
+                                        }
+                                        ClineAsk.ApiReqFailed -> {
+                                            textArea?.isEnabled = false
+                                            sendButton?.isEnabled = false
+                                            clineAsk = ClineAsk.ApiReqFailed
+                                            setEnableButton(true)
+                                            primaryButton?.text = "Retry"
+                                            secondaryButton?.text = "Start New Task"
+                                        }
                                     }
                                 }
-                            }
-                            ClineAskOrSay.Say -> {
-                                when(message.say) {
-                                    ClineSay.ApiReqFinished -> {
-                                        val info = jacksonObjectMapper().readValue<ApiTokenInfo>(message.text!!)
-                                        taskHeader?.addApiInfo(info)
+                                ClineAskOrSay.Say -> {
+                                    when(message.say) {
+                                        ClineSay.ApiReqFinished -> {
+                                            val info = jacksonObjectMapper().readValue<ApiTokenInfo>(message.text!!)
+                                            taskHeader?.addApiInfo(info)
+                                        }
+                                        else -> {}
                                     }
-                                    else -> {}
                                 }
                             }
                         }
-
                         addMessageToChatPanel(message)
                     }
 
@@ -289,18 +290,20 @@ class MainWindow : ToolWindowFactory {
                     }
 
                     override fun onClearClineMessages() {
-                        messageCount = 0
-                        textArea?.isEnabled = true
-                        sendButton?.isEnabled = true
-                        clineAsk = null
-                        setEnableButton(false)
-                        chatPanel?.removeAll()
-                        chatPanel?.add(JPanel(), GridBagConstraints().apply {
-                            gridy = 999
-                            weighty = 1.0
-                        })
-                        chatPanel?.revalidate()
-                        chatPanel?.repaint()
+                        SwingUtilities.invokeLater {
+                            messageCount = 0
+                            textArea?.isEnabled = true
+                            sendButton?.isEnabled = true
+                            clineAsk = null
+                            setEnableButton(false)
+                            chatPanel?.removeAll()
+                            chatPanel?.add(JPanel(), GridBagConstraints().apply {
+                                gridy = 999
+                                weighty = 1.0
+                            })
+                            chatPanel?.revalidate()
+                            chatPanel?.repaint()
+                        }
                     }
                 }
             )

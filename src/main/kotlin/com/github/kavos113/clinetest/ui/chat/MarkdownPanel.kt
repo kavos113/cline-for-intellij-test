@@ -75,8 +75,6 @@ class MarkdownPanel(
                 }
             }
         }
-
-        border = UIUtil.getTextFieldBorder()
     }
 
     private fun createEditorPane(content: String): JEditorPane {

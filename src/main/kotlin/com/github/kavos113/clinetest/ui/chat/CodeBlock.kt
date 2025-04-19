@@ -49,8 +49,6 @@ class CodeBlock(
             }
         }
 
-        println(path)
-
         add(field, BorderLayout.CENTER)
     }
 
