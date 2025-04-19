@@ -32,15 +32,13 @@ class CodeBlock(
         field = EditorTextField(document, project, FileTypes.PLAIN_TEXT, true, false).apply {
             addSettingsProvider { editorEx ->
                 editorEx.colorsScheme = EditorColorsManager.getInstance().globalScheme
+                fileType = getFileTypes(path?.substringAfterLast(".") ?: "txt")
+
+                if (diff != null) {
+                    text = diff
+                    setDiff(diff, editorEx)
+                }
             }
-            fileType = getFileTypes(path?.substringAfterLast(".") ?: "txt")
-
-            editor?.markupModel?.addLineHighlighter(1, HighlighterLayer.ADDITIONAL_SYNTAX, TextAttributes().apply { backgroundColor = JBColor.RED })
-        }
-
-        if (diff != null) {
-            field.text = diff
-            setDiff(diff)
         }
 
         add(field)
@@ -50,26 +48,23 @@ class CodeBlock(
         return FileTypeManager.getInstance().getFileTypeByExtension(ext)
     }
 
-    private fun setDiff(diff: String) {
-        val editor = field.editor
-        if (editor != null) {
-            val lines = diff.split("\n")
+    private fun setDiff(diff: String, editor: Editor) {
+        val lines = diff.split("\n")
 
-            var offset = 0
+        var offset = 0
 
-            for (line in lines) {
-                if (line.startsWith("+")) {
-                    addHighlight(editor, offset, offset + line.length, Color.GREEN)
-                } else if (line.startsWith("-")) {
-                    addHighlight(editor, offset, offset + line.length, Color.RED)
-                }
-
-                offset += line.length + 1
+        for (line in lines) {
+            if (line.startsWith("+")) {
+                addHighlight(editor, offset, offset + line.length, JBColor(Color(220, 255, 220, 100), Color(40, 65, 40, 100)))
+            } else if (line.startsWith("-")) {
+                addHighlight(editor, offset, offset + line.length, JBColor(Color(255, 220, 220, 100), Color(65, 40, 40, 100)))
             }
+
+            offset += line.length + 1
         }
     }
 
-    private fun addHighlight(editor: Editor, startOffset: Int, endOffset: Int, color: Color) {
+    private fun addHighlight(editor: Editor, startOffset: Int, endOffset: Int, color: JBColor) {
         val attributes = TextAttributes()
         attributes.backgroundColor = color
         editor.markupModel.addRangeHighlighter(
@@ -77,7 +72,7 @@ class CodeBlock(
             endOffset,
             HighlighterLayer.ADDITIONAL_SYNTAX,
             attributes,
-            HighlighterTargetArea.EXACT_RANGE
+            HighlighterTargetArea.LINES_IN_RANGE
         )
     }
 
@@ -87,5 +82,6 @@ class CodeBlock(
 
     fun addCode(code: String?) {
         field.text += "\n$code"
+        field.revalidate()
     }
 }
