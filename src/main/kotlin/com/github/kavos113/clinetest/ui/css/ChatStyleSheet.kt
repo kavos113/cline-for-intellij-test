@@ -2,7 +2,6 @@ package com.github.kavos113.clinetest.ui.css
 
 import com.intellij.ide.ui.UISettings
 import com.intellij.openapi.editor.colors.EditorColorsManager
-import com.intellij.util.ui.JBFont
 
 val GENERAL_CHAT_STYLE_SHEET = """
 body {

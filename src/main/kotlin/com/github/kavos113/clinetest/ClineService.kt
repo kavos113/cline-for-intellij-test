@@ -11,77 +11,77 @@ import com.intellij.openapi.project.Project
 
 @Service(Service.Level.PROJECT)
 class ClineService(private val project: Project) {
-    private var cline: Cline? = null
-    private val clineInstanceIdentifier: Long = System.currentTimeMillis()
+  private var cline: Cline? = null
+  private val clineInstanceIdentifier: Long = System.currentTimeMillis()
 
-    // "newTask"
-    fun tryToInitClineWithTask(task: String) {
-        clearTask()
-        val apiKey = ClineSecretSettings.getSecret(ClineSecretSettings.API_KEY)
-        val maxRequestsPerTask = ClineSettings.getInstance().state.maxRequestsPerTask
+  // "newTask"
+  fun tryToInitClineWithTask(task: String) {
+    clearTask()
+    val apiKey = ClineSecretSettings.getSecret(ClineSecretSettings.API_KEY)
+    val maxRequestsPerTask = ClineSettings.getInstance().state.maxRequestsPerTask
 
-        if (apiKey.isNotEmpty()) {
-            cline = Cline(
-                task = task,
-                apiKey = apiKey,
-                maxRequestsPerTask = maxRequestsPerTask,
-                project = project
-            )
-        }
+    if (apiKey.isNotEmpty()) {
+      cline = Cline(
+        task = task,
+        apiKey = apiKey,
+        maxRequestsPerTask = maxRequestsPerTask,
+        project = project
+      )
+    }
+  }
+
+  fun postMessageToWindow(message: ExtensionMessage) {
+    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onPostMessageToWindow(message)
+  }
+
+  fun postStateToWindow() {
+    val messages = getClineMessages()
+    postMessageToWindow(ExtensionMessage(state = ExtensionState(messages)))
+  }
+
+  fun clearTask() {
+    if (cline != null) {
+      cline!!.abort = true
+      cline = null
     }
 
-    fun postMessageToWindow(message: ExtensionMessage) {
-        project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onPostMessageToWindow(message)
-    }
+    setApiConversationHistory(emptyList())
+    setClineMessages(emptyList())
+  }
 
-    fun postStateToWindow() {
-        val messages = getClineMessages()
-        postMessageToWindow(ExtensionMessage(state = ExtensionState(messages)))
-    }
+  fun addClineMessage(message: ClineMessage): List<ClineMessage> {
+    val messages = getClineMessages().toMutableList()
+    messages.add(message)
+    setClineMessages(messages)
+    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onAddClineMessage(message)
+    return messages
+  }
 
-    fun clearTask() {
-        if (cline != null) {
-            cline!!.abort = true
-            cline = null
-        }
+  fun getClineMessages(): List<ClineMessage> {
+    return ClineSettings.getInstance().getClineMessages(clineInstanceIdentifier) ?: emptyList()
+  }
 
-        setApiConversationHistory(emptyList())
-        setClineMessages(emptyList())
-    }
+  fun clearClineMessages() {
+    ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, emptyList())
+    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClearClineMessages()
+  }
 
-    fun addClineMessage(message: ClineMessage): List<ClineMessage> {
-        val messages = getClineMessages().toMutableList()
-        messages.add(message)
-        setClineMessages(messages)
-        project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onAddClineMessage(message)
-        return messages
-    }
+  fun setClineMessages(messages: List<ClineMessage>) {
+    ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, messages)
+  }
 
-    fun getClineMessages(): List<ClineMessage> {
-        return ClineSettings.getInstance().getClineMessages(clineInstanceIdentifier) ?: emptyList()
-    }
+  fun getApiConversationHistory(): List<MessageParam> {
+    return ClineSettings.getInstance().getApiConversationHistory(clineInstanceIdentifier) ?: emptyList()
+  }
 
-    fun clearClineMessages() {
-        ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, emptyList())
-        project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC).onClearClineMessages()
-    }
+  fun addMessageToApiConversationHistory(message: MessageParam): List<MessageParam> {
+    val history = getApiConversationHistory().toMutableList()
+    history.add(message)
+    setApiConversationHistory(history)
+    return history
+  }
 
-    fun setClineMessages(messages: List<ClineMessage>) {
-        ClineSettings.getInstance().setClineMessages(clineInstanceIdentifier, messages)
-    }
-
-    fun getApiConversationHistory(): List<MessageParam> {
-        return ClineSettings.getInstance().getApiConversationHistory(clineInstanceIdentifier) ?: emptyList()
-    }
-
-    fun addMessageToApiConversationHistory(message: MessageParam): List<MessageParam> {
-        val history = getApiConversationHistory().toMutableList()
-        history.add(message)
-        setApiConversationHistory(history)
-        return history
-    }
-
-    fun setApiConversationHistory(history: List<MessageParam>) {
-        ClineSettings.getInstance().setApiConversationHistory(clineInstanceIdentifier, history)
-    }
+  fun setApiConversationHistory(history: List<MessageParam>) {
+    ClineSettings.getInstance().setApiConversationHistory(clineInstanceIdentifier, history)
+  }
 }

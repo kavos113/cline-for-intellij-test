@@ -10,9 +10,9 @@
         <toolWindow factoryClass="com.github.kavos113.clinetest.ui.MainWindow" id="Cline"/>
         <applicationService serviceImplementation="com.github.kavos113.clinetest.settings.ClineSettings"/>
         <applicationConfigurable
-            parentId="tools"
-            instance="com.github.kavos113.clinetest.settings.ClineSettingsConfigurable"
-            id="ClineConfigurable"
-            displayName="Cline Settings"/>
+                parentId="tools"
+                instance="com.github.kavos113.clinetest.settings.ClineSettingsConfigurable"
+                id="ClineConfigurable"
+                displayName="Cline Settings"/>
     </extensions>
 </idea-plugin>

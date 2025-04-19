@@ -42,351 +42,363 @@ import javax.swing.event.DocumentListener
 
 class MainWindow : ToolWindowFactory {
 
-    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val welcomeToolWindow = MainWindowContent(toolWindow, project)
-        val content = ContentFactory.getInstance().createContent(welcomeToolWindow.getContent(), "Welcome", false)
-        toolWindow.contentManager.addContent(content)
+  override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+    val welcomeToolWindow = MainWindowContent(toolWindow, project)
+    val content = ContentFactory.getInstance().createContent(welcomeToolWindow.getContent(), "Welcome", false)
+    toolWindow.contentManager.addContent(content)
+  }
+
+  override fun shouldBeAvailable(project: Project): Boolean = true
+
+  class MainWindowContent(toolWindow: ToolWindow, private val project: Project) {
+
+    private var messageCount = 0
+    private var clineAsk: ClineAsk? = null
+
+    private var textArea: JBTextArea? = null
+    private var sendButton: JButton? = null
+    private var primaryButton: JButton? = null
+    private var secondaryButton: JButton? = null
+    private var chatPanel: JPanel? = null
+    private var chatScrollPane: JBScrollPane? = null
+    private val mainPanel = JPanel(BorderLayout())
+
+    private var lastChat: ChatRow? = null
+    private var taskHeader: TaskHeader? = null
+    private val welcomeHeader = panel {
+      row {
+        text("What can I do for you?")
+          .bold()
+      }
     }
 
-    override fun shouldBeAvailable(project: Project): Boolean = true
+    private fun getClineService() = project.getService(ClineService::class.java)
 
-    class MainWindowContent(toolWindow: ToolWindow, private val project: Project) {
-
-        private var messageCount = 0
-        private var clineAsk: ClineAsk? = null
-
-        private var textArea: JBTextArea? = null
-        private var sendButton: JButton? = null
-        private var primaryButton: JButton? = null
-        private var secondaryButton: JButton? = null
-        private var chatPanel: JPanel? = null
-        private var chatScrollPane: JBScrollPane? = null
-        private val mainPanel = JPanel(BorderLayout())
-
-        private var lastChat: ChatRow? = null
-        private var taskHeader: TaskHeader? = null
-        private val welcomeHeader = panel {
+    fun getContent(): JComponent {
+      val inputPanel = panel {
+        row {
+          panel {
             row {
-                text("What can I do for you?")
-                    .bold()
-            }
-        }
-
-        private fun getClineService() = project.getService(ClineService::class.java)
-
-        fun getContent(): JComponent {
-            val inputPanel = panel {
-                row {
-                    panel {
-                        row {
-                            button("add message") {
-                                if (messageCount < sampleMessages.size) {
-                                    project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
-                                        .onAddClineMessage(sampleMessages[messageCount])
-                                    messageCount++
-                                }
-                            }
-                        }
-                        row {
-                            cell(JPanel(GridLayout(1, 2, 5, 0)))
-                                .align(AlignX.FILL)
-                                .applyToComponent {
-                                    primaryButton = JButton().apply {
-                                        addActionListener {
-                                            when (clineAsk) {
-                                                ClineAsk.RequestLimitReached, ClineAsk.ApiReqFailed, ClineAsk.Command, ClineAsk.Tool -> {
-                                                    project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
-                                                        .onResponse(ClineAskResponse.YesButtonTapped)
-                                                }
-                                                ClineAsk.CompletionResult -> {
-                                                    getClineService().clearTask()
-                                                }
-                                                else -> {}
-                                            }
-
-                                            textArea?.isEnabled = false
-                                            sendButton?.isEnabled = false
-                                            clineAsk = null
-                                            setEnableButton(false)
-                                        }
-                                    }
-                                    secondaryButton = JButton().apply {
-                                        addActionListener {
-                                            textArea?.isEnabled = false
-                                            sendButton?.isEnabled = false
-
-                                            when (clineAsk) {
-                                                ClineAsk.RequestLimitReached, ClineAsk.ApiReqFailed -> {
-                                                    getClineService().clearTask()
-                                                    if (taskHeader != null) {
-                                                        mainPanel.remove(taskHeader!!.content)
-                                                        taskHeader = null
-                                                    }
-                                                    mainPanel.add(welcomeHeader, BorderLayout.NORTH)
-                                                    chatPanel?.removeAll()
-                                                    chatPanel?.add(JPanel(), GridBagConstraints().apply {
-                                                        gridy = 999
-                                                        weighty = 1.0
-                                                    })
-                                                    textArea?.isEnabled = true
-                                                    sendButton?.isEnabled = true
-                                                    project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
-                                                        .onResponse(ClineAskResponse.NoButtonTapped)
-                                                }
-                                                ClineAsk.Command, ClineAsk.Tool -> {
-                                                    project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
-                                                        .onResponse(ClineAskResponse.NoButtonTapped)
-                                                }
-                                                else -> {}
-                                            }
-
-                                            clineAsk = null
-                                            setEnableButton(false)
-                                        }
-                                    }
-
-                                    add(primaryButton)
-                                    add(secondaryButton)
-                                }
-                        }
-                        row {
-                            textArea = textArea()
-                                .resizableColumn()
-                                .align(Align.FILL)
-                                .applyToComponent {
-                                    lineWrap = true
-                                    wrapStyleWord = true
-                                    border = JBUI.Borders.empty(8)
-                                    emptyText.text = "Type a message..."
-
-                                    document.addDocumentListener(object : DocumentListener {
-                                        override fun insertUpdate(e: DocumentEvent?) = updateSize()
-                                        override fun removeUpdate(e: DocumentEvent?) = updateSize()
-                                        override fun changedUpdate(e: DocumentEvent?) = updateSize()
-
-                                        private fun updateSize() {
-                                            size.height = preferredSize.height
-                                            mainPanel.revalidate()
-                                        }
-                                    })
-                                }
-                                .component
-
-                            sendButton = button("") {
-                                handleSendMessage()
-                            }.applyToComponent {
-                                icon = AllIcons.Actions.ArrowExpand
-                                toolTipText = "Send Message"
-                                isFocusable = true
-                                putClientProperty("JButton.buttonType", "toolBarButton")
-                                border = JBUI.Borders.empty(4)
-                            }.align(AlignY.CENTER).component
-                        }
-                    }
-                }.resizableRow()
-            }
-
-            chatPanel = JPanel().apply {
-                layout = GridBagLayout()
-
-                add(JPanel(), GridBagConstraints().apply {
-                    gridy = 999
-                    weighty = 1.0
-                })
-            }
-
-            mainPanel.add(welcomeHeader, BorderLayout.NORTH)
-            mainPanel.add(inputPanel, BorderLayout.SOUTH)
-
-            chatScrollPane = JBScrollPane(chatPanel).apply {
-                horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
-                verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-            }
-
-            mainPanel.add(chatScrollPane!!, BorderLayout.CENTER)
-
-            setEnableButton(false)
-            setupMessageHandler()
-
-            return mainPanel
-        }
-
-        private fun setupMessageHandler() {
-            project.messageBus.connect().subscribe(
-                ClineEventListener.CLINE_EVENT_TOPIC,
-                object : ClineEventListener {
-
-                    override fun onAddClineMessage(message: ClineMessage) {
-                        SwingUtilities.invokeLater {
-                            setEnableButton(false)
-                            when (message.type) {
-                                ClineAskOrSay.Ask -> {
-                                    val ask = message.ask!!
-                                    when (ask) {
-                                        ClineAsk.RequestLimitReached -> {
-                                            textArea?.isEnabled = false
-                                            sendButton?.isEnabled = false
-                                            clineAsk = ClineAsk.RequestLimitReached
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Proceed"
-                                            secondaryButton?.text = "Start New Task"
-                                        }
-                                        ClineAsk.Followup -> {
-                                            textArea?.isEnabled = true
-                                            sendButton?.isEnabled = true
-                                            clineAsk = ClineAsk.Followup
-                                            setEnableButton(false)
-                                        }
-                                        ClineAsk.Command -> {
-                                            textArea?.isEnabled = true
-                                            sendButton?.isEnabled = true
-                                            clineAsk = ClineAsk.Command
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Run Command"
-                                            secondaryButton?.text = "Reject"
-                                        }
-                                        ClineAsk.CompletionResult -> {
-                                            textArea?.isEnabled = true
-                                            sendButton?.isEnabled = true
-                                            clineAsk = ClineAsk.CompletionResult
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Start New Task"
-                                            secondaryButton?.isVisible = false
-                                        }
-                                        ClineAsk.Tool -> {
-                                            textArea?.isEnabled = true
-                                            sendButton?.isEnabled = true
-                                            clineAsk = ClineAsk.Tool
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Approve"
-                                            secondaryButton?.text = "Reject"
-                                        }
-                                        ClineAsk.ApiReqFailed -> {
-                                            textArea?.isEnabled = false
-                                            sendButton?.isEnabled = false
-                                            clineAsk = ClineAsk.ApiReqFailed
-                                            setEnableButton(true)
-                                            primaryButton?.text = "Retry"
-                                            secondaryButton?.text = "Start New Task"
-                                        }
-                                    }
-                                }
-                                ClineAskOrSay.Say -> {
-                                    when(message.say) {
-                                        ClineSay.ApiReqFinished -> {
-                                            val info = jacksonObjectMapper().readValue<ApiTokenInfo>(message.text!!)
-                                            taskHeader?.addApiInfo(info)
-                                        }
-                                        else -> {}
-                                    }
-                                }
-                            }
-                        }
-                        addMessageToChatPanel(message)
-                    }
-
-                    override fun onPostMessageToWindow(message: ExtensionMessage) {
-
-                    }
-
-                    override fun onClearClineMessages() {
-                        SwingUtilities.invokeLater {
-                            messageCount = 0
-                            textArea?.isEnabled = true
-                            sendButton?.isEnabled = true
-                            clineAsk = null
-                            setEnableButton(false)
-                            chatPanel?.removeAll()
-                            chatPanel?.add(JPanel(), GridBagConstraints().apply {
-                                gridy = 999
-                                weighty = 1.0
-                            })
-                            chatPanel?.revalidate()
-                            chatPanel?.repaint()
-                        }
-                    }
+              button("add message") {
+                if (messageCount < sampleMessages.size) {
+                  project.messageBus.syncPublisher(ClineEventListener.CLINE_EVENT_TOPIC)
+                    .onAddClineMessage(sampleMessages[messageCount])
+                  messageCount++
                 }
-            )
-        }
-
-        private fun handleSendMessage() {
-            val message = textArea?.text
-
-            if (message?.isNotEmpty() == true) {
-                if (messageCount == 0) {
-                    taskHeader = TaskHeader(message)
-                    mainPanel.remove(welcomeHeader)
-                    mainPanel.add(taskHeader!!.content, BorderLayout.NORTH)
-                    mainPanel.revalidate()
-                    mainPanel.repaint()
-
-                    ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running Cline", false) {
-                        override fun run(p0: ProgressIndicator) {
-                            getClineService().tryToInitClineWithTask(message)
+              }
+            }
+            row {
+              cell(JPanel(GridLayout(1, 2, 5, 0)))
+                .align(AlignX.FILL)
+                .applyToComponent {
+                  primaryButton = JButton().apply {
+                    addActionListener {
+                      when (clineAsk) {
+                        ClineAsk.RequestLimitReached, ClineAsk.ApiReqFailed, ClineAsk.Command, ClineAsk.Tool -> {
+                          project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
+                            .onResponse(ClineAskResponse.YesButtonTapped)
                         }
-                    })
-                } else if (clineAsk != null) {
-                    when (clineAsk) {
-                        ClineAsk.Followup, ClineAsk.Tool, ClineAsk.Command, ClineAsk.CompletionResult -> {
-                            project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
-                                .onResponse(
-                                    response = ClineAskResponse.TextResponse,
-                                    text = message
-                                )
+
+                        ClineAsk.CompletionResult -> {
+                          getClineService().clearTask()
                         }
+
                         else -> {}
+                      }
+
+                      textArea?.isEnabled = false
+                      sendButton?.isEnabled = false
+                      clineAsk = null
+                      setEnableButton(false)
                     }
-                }
+                  }
+                  secondaryButton = JButton().apply {
+                    addActionListener {
+                      textArea?.isEnabled = false
+                      sendButton?.isEnabled = false
 
-                textArea?.text = ""
-                textArea?.isEnabled = false
-                sendButton?.isEnabled = false
-                clineAsk = null
-                setEnableButton(false)
-            }
-        }
+                      when (clineAsk) {
+                        ClineAsk.RequestLimitReached, ClineAsk.ApiReqFailed -> {
+                          getClineService().clearTask()
+                          if (taskHeader != null) {
+                            mainPanel.remove(taskHeader!!.content)
+                            taskHeader = null
+                          }
+                          mainPanel.add(welcomeHeader, BorderLayout.NORTH)
+                          chatPanel?.removeAll()
+                          chatPanel?.add(JPanel(), GridBagConstraints().apply {
+                            gridy = 999
+                            weighty = 1.0
+                          })
+                          textArea?.isEnabled = true
+                          sendButton?.isEnabled = true
+                          project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
+                            .onResponse(ClineAskResponse.NoButtonTapped)
+                        }
 
-        private fun setEnableButton(enable: Boolean) {
-            primaryButton?.isVisible = enable
-            secondaryButton?.isVisible = enable
-        }
+                        ClineAsk.Command, ClineAsk.Tool -> {
+                          project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
+                            .onResponse(ClineAskResponse.NoButtonTapped)
+                        }
 
-        private fun addMessageToChatPanel(message: ClineMessage) {
-            println("request message: $message")
-            if (lastChat?.isPendingApiRequest() == true && (message.say == ClineSay.ApiReqFinished || message.ask == ClineAsk.ApiReqFailed)) {
-                lastChat?.updateApiRequest(message)
-                return
-            }
+                        else -> {}
+                      }
 
-            if (lastChat?.isCommand() == true && message.say == ClineSay.CommandOutput) {
-                lastChat?.addCommandOutput(message)
-                return
-            }
+                      clineAsk = null
+                      setEnableButton(false)
+                    }
+                  }
 
-            chatPanel?.remove(chatPanel?.componentCount?.minus(1) ?: 0)
-
-            lastChat = ChatRow(message, project)
-            chatPanel?.add(lastChat!!.content, GridBagConstraints().apply {
-                gridx = 0
-                gridy = chatPanel?.componentCount ?: 0
-                weightx = 1.0
-                fill = GridBagConstraints.HORIZONTAL
-                anchor = GridBagConstraints.NORTH
-            })
-
-            chatPanel?.add(JPanel(), GridBagConstraints().apply {
-                gridy = chatPanel?.componentCount ?: 0
-                weighty = 1.0
-            })
-
-            chatPanel?.revalidate()
-            chatPanel?.repaint()
-
-            SwingUtilities.invokeLater {
-                ApplicationManager.getApplication().runReadAction {
-                    chatScrollPane?.viewport?.viewPosition = Point(0, chatPanel!!.height)
+                  add(primaryButton)
+                  add(secondaryButton)
                 }
             }
-        }
+            row {
+              textArea = textArea()
+                .resizableColumn()
+                .align(Align.FILL)
+                .applyToComponent {
+                  lineWrap = true
+                  wrapStyleWord = true
+                  border = JBUI.Borders.empty(8)
+                  emptyText.text = "Type a message..."
+
+                  document.addDocumentListener(object : DocumentListener {
+                    override fun insertUpdate(e: DocumentEvent?) = updateSize()
+                    override fun removeUpdate(e: DocumentEvent?) = updateSize()
+                    override fun changedUpdate(e: DocumentEvent?) = updateSize()
+
+                    private fun updateSize() {
+                      size.height = preferredSize.height
+                      mainPanel.revalidate()
+                    }
+                  })
+                }
+                .component
+
+              sendButton = button("") {
+                handleSendMessage()
+              }.applyToComponent {
+                icon = AllIcons.Actions.ArrowExpand
+                toolTipText = "Send Message"
+                isFocusable = true
+                putClientProperty("JButton.buttonType", "toolBarButton")
+                border = JBUI.Borders.empty(4)
+              }.align(AlignY.CENTER).component
+            }
+          }
+        }.resizableRow()
+      }
+
+      chatPanel = JPanel().apply {
+        layout = GridBagLayout()
+
+        add(JPanel(), GridBagConstraints().apply {
+          gridy = 999
+          weighty = 1.0
+        })
+      }
+
+      mainPanel.add(welcomeHeader, BorderLayout.NORTH)
+      mainPanel.add(inputPanel, BorderLayout.SOUTH)
+
+      chatScrollPane = JBScrollPane(chatPanel).apply {
+        horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+      }
+
+      mainPanel.add(chatScrollPane!!, BorderLayout.CENTER)
+
+      setEnableButton(false)
+      setupMessageHandler()
+
+      return mainPanel
     }
+
+    private fun setupMessageHandler() {
+      project.messageBus.connect().subscribe(
+        ClineEventListener.CLINE_EVENT_TOPIC,
+        object : ClineEventListener {
+
+          override fun onAddClineMessage(message: ClineMessage) {
+            SwingUtilities.invokeLater {
+              setEnableButton(false)
+              when (message.type) {
+                ClineAskOrSay.Ask -> {
+                  val ask = message.ask!!
+                  when (ask) {
+                    ClineAsk.RequestLimitReached -> {
+                      textArea?.isEnabled = false
+                      sendButton?.isEnabled = false
+                      clineAsk = ClineAsk.RequestLimitReached
+                      setEnableButton(true)
+                      primaryButton?.text = "Proceed"
+                      secondaryButton?.text = "Start New Task"
+                    }
+
+                    ClineAsk.Followup -> {
+                      textArea?.isEnabled = true
+                      sendButton?.isEnabled = true
+                      clineAsk = ClineAsk.Followup
+                      setEnableButton(false)
+                    }
+
+                    ClineAsk.Command -> {
+                      textArea?.isEnabled = true
+                      sendButton?.isEnabled = true
+                      clineAsk = ClineAsk.Command
+                      setEnableButton(true)
+                      primaryButton?.text = "Run Command"
+                      secondaryButton?.text = "Reject"
+                    }
+
+                    ClineAsk.CompletionResult -> {
+                      textArea?.isEnabled = true
+                      sendButton?.isEnabled = true
+                      clineAsk = ClineAsk.CompletionResult
+                      setEnableButton(true)
+                      primaryButton?.text = "Start New Task"
+                      secondaryButton?.isVisible = false
+                    }
+
+                    ClineAsk.Tool -> {
+                      textArea?.isEnabled = true
+                      sendButton?.isEnabled = true
+                      clineAsk = ClineAsk.Tool
+                      setEnableButton(true)
+                      primaryButton?.text = "Approve"
+                      secondaryButton?.text = "Reject"
+                    }
+
+                    ClineAsk.ApiReqFailed -> {
+                      textArea?.isEnabled = false
+                      sendButton?.isEnabled = false
+                      clineAsk = ClineAsk.ApiReqFailed
+                      setEnableButton(true)
+                      primaryButton?.text = "Retry"
+                      secondaryButton?.text = "Start New Task"
+                    }
+                  }
+                }
+
+                ClineAskOrSay.Say -> {
+                  when (message.say) {
+                    ClineSay.ApiReqFinished -> {
+                      val info = jacksonObjectMapper().readValue<ApiTokenInfo>(message.text!!)
+                      taskHeader?.addApiInfo(info)
+                    }
+
+                    else -> {}
+                  }
+                }
+              }
+            }
+            addMessageToChatPanel(message)
+          }
+
+          override fun onPostMessageToWindow(message: ExtensionMessage) {
+
+          }
+
+          override fun onClearClineMessages() {
+            SwingUtilities.invokeLater {
+              messageCount = 0
+              textArea?.isEnabled = true
+              sendButton?.isEnabled = true
+              clineAsk = null
+              setEnableButton(false)
+              chatPanel?.removeAll()
+              chatPanel?.add(JPanel(), GridBagConstraints().apply {
+                gridy = 999
+                weighty = 1.0
+              })
+              chatPanel?.revalidate()
+              chatPanel?.repaint()
+            }
+          }
+        }
+      )
+    }
+
+    private fun handleSendMessage() {
+      val message = textArea?.text
+
+      if (message?.isNotEmpty() == true) {
+        if (messageCount == 0) {
+          taskHeader = TaskHeader(message)
+          mainPanel.remove(welcomeHeader)
+          mainPanel.add(taskHeader!!.content, BorderLayout.NORTH)
+          mainPanel.revalidate()
+          mainPanel.repaint()
+
+          ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Running Cline", false) {
+            override fun run(p0: ProgressIndicator) {
+              getClineService().tryToInitClineWithTask(message)
+            }
+          })
+        } else if (clineAsk != null) {
+          when (clineAsk) {
+            ClineAsk.Followup, ClineAsk.Tool, ClineAsk.Command, ClineAsk.CompletionResult -> {
+              project.messageBus.syncPublisher(ClineAskResponseListener.CLINE_ASK_RESPONSE_TOPIC)
+                .onResponse(
+                  response = ClineAskResponse.TextResponse,
+                  text = message
+                )
+            }
+
+            else -> {}
+          }
+        }
+
+        textArea?.text = ""
+        textArea?.isEnabled = false
+        sendButton?.isEnabled = false
+        clineAsk = null
+        setEnableButton(false)
+      }
+    }
+
+    private fun setEnableButton(enable: Boolean) {
+      primaryButton?.isVisible = enable
+      secondaryButton?.isVisible = enable
+    }
+
+    private fun addMessageToChatPanel(message: ClineMessage) {
+      println("request message: $message")
+      if (lastChat?.isPendingApiRequest() == true && (message.say == ClineSay.ApiReqFinished || message.ask == ClineAsk.ApiReqFailed)) {
+        lastChat?.updateApiRequest(message)
+        return
+      }
+
+      if (lastChat?.isCommand() == true && message.say == ClineSay.CommandOutput) {
+        lastChat?.addCommandOutput(message)
+        return
+      }
+
+      chatPanel?.remove(chatPanel?.componentCount?.minus(1) ?: 0)
+
+      lastChat = ChatRow(message, project)
+      chatPanel?.add(lastChat!!.content, GridBagConstraints().apply {
+        gridx = 0
+        gridy = chatPanel?.componentCount ?: 0
+        weightx = 1.0
+        fill = GridBagConstraints.HORIZONTAL
+        anchor = GridBagConstraints.NORTH
+      })
+
+      chatPanel?.add(JPanel(), GridBagConstraints().apply {
+        gridy = chatPanel?.componentCount ?: 0
+        weighty = 1.0
+      })
+
+      chatPanel?.revalidate()
+      chatPanel?.repaint()
+
+      SwingUtilities.invokeLater {
+        ApplicationManager.getApplication().runReadAction {
+          chatScrollPane?.viewport?.viewPosition = Point(0, chatPanel!!.height)
+        }
+      }
+    }
+  }
 }
