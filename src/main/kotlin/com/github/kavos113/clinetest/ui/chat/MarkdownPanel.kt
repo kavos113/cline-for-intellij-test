@@ -1,17 +1,20 @@
 package com.github.kavos113.clinetest.ui.chat
 
-import com.github.kavos113.clinetest.ui.css.CODE_BLOCK_STYLE_SHEET
 import com.github.kavos113.clinetest.ui.css.GENERAL_CHAT_STYLE_SHEET
-import com.intellij.testFramework.LightVirtualFile
-import com.intellij.util.ui.JBFont
+import com.intellij.ide.ui.UISettings
+import com.intellij.lang.Language
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.fileTypes.FileTypeManager
+import com.intellij.openapi.project.Project
+import com.intellij.util.ui.UIUtil
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
-import org.intellij.plugins.markdown.ui.preview.html.MarkdownUtil
-import java.awt.GridLayout
+import java.awt.Dimension
+import javax.swing.BoxLayout
 import javax.swing.JEditorPane
 import javax.swing.JPanel
 import javax.swing.text.html.HTMLEditorKit
-import javax.swing.text.html.StyleSheet
 
 const val HTML_SAMPLE = """<html>
     <body>
@@ -31,31 +34,73 @@ hello_world()
 """
 
 class MarkdownPanel(
-    content: String
-): JPanel(GridLayout(1, 1)) {
-    private val editorPane: JEditorPane
+    content: String,
+    project: Project
+): JPanel() {
 
     init {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+
         val parser = Parser.builder().build()
         val renderer = HtmlRenderer.builder().build()
 
-        val htmlContent = renderer.render(parser.parse(content))
+        val contents = content.split("```")
 
-        println(htmlContent)
+        contents.forEachIndexed { i, s ->
+            if (s.isEmpty()) {
+                return@forEachIndexed
+            }
+            println(s)
+            if (i % 2 == 0) {
+                val htmlContent = renderer.render(parser.parse(s))
+                val editorPane = createEditorPane(htmlContent)
 
-        editorPane = JEditorPane("text/html", "")
+                add(editorPane)
+            } else {
+                ApplicationManager.getApplication().invokeLater {
+                    val lang = s.substringBefore("\n").trim()
+                    val codeContent = s.substring(lang.length).trim()
+                    val codeBlock = CodeBlock(
+                        code = codeContent,
+                        diff = null,
+                        path = "code.${getExtFromLanguage(lang)}",
+                        isExpanded = true,
+                        project = project
+                    )
+
+                    codeBlock.size = codeBlock.preferredSize
+                    add(codeBlock)
+
+                    revalidate()
+                    repaint()
+                }
+            }
+        }
+
+        border = UIUtil.getTextFieldBorder()
+    }
+
+    private fun createEditorPane(content: String): JEditorPane {
+        val editorPane = JEditorPane("text/html", "")
 
         val kit = editorPane.editorKit as HTMLEditorKit
-        println("${kit.contentType}, ${kit.styleSheet}")
+        val styleSheet = kit.styleSheet
+        styleSheet.addRule(GENERAL_CHAT_STYLE_SHEET)
 
-        kit.styleSheet.addRule(GENERAL_CHAT_STYLE_SHEET)
-        kit.styleSheet.addRule(CODE_BLOCK_STYLE_SHEET)
-
-        editorPane.text = "<html><body>$htmlContent</body></html>"
+        editorPane.text = "<html><body>$content</body></html>"
         editorPane.isEditable = false
         editorPane.background = null
         editorPane.isOpaque = false
+        editorPane.font = UIUtil.getLabelFont()
 
-        add(editorPane)
+        return editorPane
+    }
+
+    private fun getExtFromLanguage(language: String): String {
+        return ReadAction.compute<String, Throwable> {
+            FileTypeManager.getInstance().findFileTypeByLanguage(
+                Language.findLanguageByID(language) ?: Language.ANY
+            )?.defaultExtension ?: "txt"
+        }
     }
 }

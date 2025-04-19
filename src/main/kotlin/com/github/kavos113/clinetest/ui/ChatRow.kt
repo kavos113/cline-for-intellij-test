@@ -111,8 +111,11 @@ class ChatRow(
                         }
                     }
                 }
-                ClineSay.Text, ClineSay.UserFeedback -> JPanel().apply {
-                    add(MarkdownPanel(message.text ?: ""))
+                ClineSay.Text, ClineSay.UserFeedback -> panel {
+                    row {
+                        cell(MarkdownPanel(message.text ?: "", project))
+                            .align(AlignX.FILL)
+                    }
                 }
                 ClineSay.Error -> panel {
                     row {
@@ -131,7 +134,7 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        cell(MarkdownPanel(message.text ?: ""))
+                        cell(MarkdownPanel(message.text ?: "", project))
                             .align(AlignX.FILL)
                     }
                 }
@@ -145,7 +148,7 @@ class ChatRow(
                         }
                     }
                     row {
-                        cell(MarkdownPanel(message.text ?: ""))
+                        cell(MarkdownPanel(message.text ?: "", project))
                             .align(AlignX.FILL)
                     }
                 }
@@ -251,13 +254,13 @@ class ChatRow(
                         cell(title)
                     }
                     row {
-                        cell(MarkdownPanel(message.text ?: ""))
+                        cell(MarkdownPanel(message.text ?: "", project))
                             .align(AlignX.FILL)
                     }
                 }
                 ClineAsk.Followup -> panel {
                     row {
-                        cell(MarkdownPanel(message.text ?: ""))
+                        cell(MarkdownPanel(message.text ?: "", project))
                             .align(AlignX.FILL)
                     }
                 }
@@ -271,7 +274,7 @@ class ChatRow(
                         }
                     }
                     row {
-                        cell(MarkdownPanel(message.text ?: ""))
+                        cell(MarkdownPanel(message.text ?: "", project))
                             .align(AlignX.FILL)
                     }
                 }

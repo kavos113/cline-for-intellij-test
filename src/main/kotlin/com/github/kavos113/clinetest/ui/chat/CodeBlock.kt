@@ -2,6 +2,7 @@ package com.github.kavos113.clinetest.ui.chat
 
 import com.intellij.diff.editor.DiffFileType
 import com.intellij.ide.highlighter.JavaFileType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.colors.EditorColorsManager
@@ -30,23 +31,30 @@ class CodeBlock(
 
     init {
         val document = EditorFactory.getInstance().createDocument(code ?: diff ?: "")
-        val fileType = if (diff == null) {
-            getFileTypes(path?.substringAfterLast(".") ?: "txt")
-        } else {
-            FileTypes.PLAIN_TEXT
+        val fileType = ApplicationManager.getApplication().runReadAction<FileType> {
+            if (diff == null) {
+                getFileTypes(path?.substringAfterLast(".") ?: "txt")
+            } else {
+                FileTypes.PLAIN_TEXT
+            }
         }
+
         field = EditorTextField(document, project, fileType, true, false).apply {
             addSettingsProvider { editorEx ->
-                editorEx.colorsScheme = EditorColorsManager.getInstance().globalScheme
+                ApplicationManager.getApplication().runReadAction {
+                    editorEx.colorsScheme = EditorColorsManager.getInstance().globalScheme
 
-                if (diff != null) {
-                    text = diff
-                    setDiff(diff, editorEx)
+                    if (diff != null) {
+                        text = diff
+                        setDiff(diff, editorEx)
+                    }
                 }
             }
         }
 
-        add(field)
+        println(path)
+
+        add(field, BorderLayout.CENTER)
     }
 
     private fun getFileTypes(ext: String): FileType {
@@ -72,21 +80,28 @@ class CodeBlock(
     private fun addHighlight(editor: Editor, startOffset: Int, endOffset: Int, color: JBColor) {
         val attributes = TextAttributes()
         attributes.backgroundColor = color
-        editor.markupModel.addRangeHighlighter(
-            startOffset,
-            endOffset,
-            HighlighterLayer.ADDITIONAL_SYNTAX,
-            attributes,
-            HighlighterTargetArea.LINES_IN_RANGE
-        )
+        ApplicationManager.getApplication().runReadAction {
+            editor.markupModel.addRangeHighlighter(
+                startOffset,
+                endOffset,
+                HighlighterLayer.ADDITIONAL_SYNTAX,
+                attributes,
+                HighlighterTargetArea.LINES_IN_RANGE
+            )
+        }
     }
 
     fun setCode(code: String?) {
-        field.text = code ?: ""
+        ApplicationManager.getApplication().runWriteAction {
+            field.text = code ?: ""
+            field.revalidate()
+        }
     }
 
     fun addCode(code: String?) {
-        field.text += "\n$code"
-        field.revalidate()
+        ApplicationManager.getApplication().runWriteAction {
+            field.text += "\n$code"
+            field.revalidate()
+        }
     }
 }

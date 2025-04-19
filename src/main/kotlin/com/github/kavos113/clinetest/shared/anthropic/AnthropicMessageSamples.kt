@@ -25,6 +25,13 @@ def hello_world():
     print("Hello, world!")
 hello_world()
 ```
+```html
+<body>
+    <p>
+        aaaa
+    </p>
+</body>
+```
                 """.trimIndent())
                 .citations(listOf())
                 .build()

@@ -55,10 +55,6 @@ class ClineSayApi(say: ClineSay?){
         }
     }
 
-    init {
-        content.border = UIUtil.getTextFieldBorder()
-    }
-
     fun updateApiRequest(message: ClineMessage) {
         if (message.say == ClineSay.ApiReqFinished) {
             icon.icon = AllIcons.General.InspectionsOK

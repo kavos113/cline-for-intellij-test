@@ -7,12 +7,17 @@ import com.intellij.util.ui.JBFont
 val GENERAL_CHAT_STYLE_SHEET = """
 body {
     font-family: ${UISettings.getInstance().fontFace};
-    font-size: ${UISettings.getInstance().fontSize}px;
+    font-size: 8px;
     color: #000000;
     margin: 0;
     padding: 0;
     text-align: left;
-    border: 1px solid #000000;
+}
+p {
+    margin: 0;
+}
+h1, h2, h3, h4, h5, h6 {
+    margin: 0.25em 0;
 }
 """
 
@@ -23,6 +28,5 @@ pre {
     color: #000000;
     white-space: pre-wrap;
     margin: 0;
-    border: 1px solid #000000;
 }
 """
