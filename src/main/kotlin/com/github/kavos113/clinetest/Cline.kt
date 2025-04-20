@@ -63,6 +63,7 @@ class Cline(
   private var requestCount = 0
   private var askResponse: ClineAskResponse? = null
   private var askResponseText: String? = null
+  private var lastMessageTs: Long = 0
   var abort = false
 
   private val messageBus = project.messageBus
@@ -90,9 +91,12 @@ class Cline(
     askResponse = null
     askResponseText = null
 
+    val askTs = System.currentTimeMillis()
+    lastMessageTs = askTs
+
     getClineService().addClineMessage(
       ClineMessage(
-        ts = System.currentTimeMillis(),
+        ts = askTs,
         type = ClineAskOrSay.Ask,
         ask = type,
         text = question
@@ -125,9 +129,12 @@ class Cline(
       throw IllegalStateException("Task has been aborted")
     }
 
+    val sayTs = System.currentTimeMillis()
+    lastMessageTs = sayTs
+
     getClineService().addClineMessage(
       ClineMessage(
-        ts = System.currentTimeMillis(),
+        ts = sayTs,
         type = ClineAskOrSay.Say,
         say = type,
         text = text
@@ -462,7 +469,7 @@ class Cline(
         return ""
       }
 
-      return "Command executed successfully. Output:\n$stringBuilder"
+      return "Command Output:\n$stringBuilder"
     } catch (e: ExecutionException) {
       val errorString = "Error executing command:\n${e.message}"
       say(ClineSay.Error, "Error executing command: ${e.message}")
