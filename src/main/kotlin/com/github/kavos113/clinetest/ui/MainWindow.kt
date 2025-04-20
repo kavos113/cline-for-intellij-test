@@ -14,6 +14,7 @@ import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ExtensionMessage
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -44,7 +45,7 @@ class MainWindow : ToolWindowFactory {
 
   override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
     val welcomeToolWindow = MainWindowContent(toolWindow, project)
-    val content = ContentFactory.getInstance().createContent(welcomeToolWindow.getContent(), "Welcome", false)
+    val content = ContentFactory.getInstance().createContent(welcomeToolWindow.getContent(), null, false)
     toolWindow.contentManager.addContent(content)
   }
 

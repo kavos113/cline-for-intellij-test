@@ -1,18 +1,18 @@
 <idea-plugin>
     <id>com.github.kavos113.clinetest</id>
-    <name>Cline for IntelliJ Test</name>
+    <name>Cline for JB Test</name>
     <vendor>kavos113</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.intellij.plugins.markdown</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.kavos113.clinetest.ui.MainWindow" id="Cline"/>
+        <toolWindow factoryClass="com.github.kavos113.clinetest.ui.MainWindow" id="Cline" anchor="right"/>
         <applicationService serviceImplementation="com.github.kavos113.clinetest.settings.ClineSettings"/>
         <applicationConfigurable
                 parentId="tools"
                 instance="com.github.kavos113.clinetest.settings.ClineSettingsConfigurable"
                 id="ClineConfigurable"
-                displayName="Cline Settings"/>
+                displayName="Cline"/>
     </extensions>
 </idea-plugin>

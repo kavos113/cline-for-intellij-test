@@ -1,10 +1,7 @@
 package com.github.kavos113.clinetest.ui.chat
 
 import com.github.kavos113.clinetest.ui.css.GENERAL_CHAT_STYLE_SHEET
-import com.intellij.lang.Language
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ReadAction
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.UIUtil
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -92,10 +89,20 @@ class MarkdownPanel(
   }
 
   private fun getExtFromLanguage(language: String): String {
-    return ReadAction.compute<String, Throwable> {
-      FileTypeManager.getInstance().findFileTypeByLanguage(
-        Language.findLanguageByID(language) ?: Language.ANY
-      )?.defaultExtension ?: "txt"
+    return when (language) {
+      "batch" -> "bat"
+      "csharp" -> "cs"
+      "dockerfile" -> "Dockerfile"
+      "haskell" -> "hs"
+      "javascript" -> "js"
+      "kotlin" -> "kt"
+      "latex" -> "tex"
+      "markdown" -> "md"
+      "perl" -> "pl"
+      "ruby" -> "rb"
+      "rust" -> "rs"
+      "typescript" -> "ts"
+      else -> language
     }
   }
 }
