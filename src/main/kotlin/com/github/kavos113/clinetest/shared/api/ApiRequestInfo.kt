@@ -1,4 +1,4 @@
-package com.github.kavos113.clinetest.shared
+package com.github.kavos113.clinetest.shared.api
 
 import com.anthropic.models.messages.MessageParam
 import com.anthropic.models.messages.Model

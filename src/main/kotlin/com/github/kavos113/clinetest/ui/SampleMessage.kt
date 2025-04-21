@@ -1,7 +1,7 @@
 package com.github.kavos113.clinetest.ui
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.kavos113.clinetest.shared.ApiTokenInfo
+import com.github.kavos113.clinetest.shared.api.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.message.ClineAsk
 import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
 import com.github.kavos113.clinetest.shared.message.ClineMessage

@@ -1,4 +1,4 @@
-package com.github.kavos113.clinetest.shared
+package com.github.kavos113.clinetest.shared.api
 
 data class ApiTokenInfo(
   val tokensIn: Long,

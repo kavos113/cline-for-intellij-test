@@ -20,6 +20,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
 
     implementation("com.anthropic:anthropic-java:0.8.0")
+    implementation("com.anthropic:anthropic-java-bedrock:1.2.0")
+    implementation("com.amazonaws:aws-java-sdk:1.12.782")
+
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
     implementation("com.vladsch.flexmark:flexmark-all:0.64.8")

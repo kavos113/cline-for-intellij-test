@@ -1,6 +1,6 @@
 package com.github.kavos113.clinetest.ui
 
-import com.github.kavos113.clinetest.shared.ApiTokenInfo
+import com.github.kavos113.clinetest.shared.api.ApiTokenInfo
 import com.intellij.icons.AllIcons
 import com.intellij.ui.dsl.builder.panel
 import java.awt.Font

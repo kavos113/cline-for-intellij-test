@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.kavos113.clinetest.ClineEventListener
 import com.github.kavos113.clinetest.ClineService
-import com.github.kavos113.clinetest.shared.ApiTokenInfo
+import com.github.kavos113.clinetest.shared.api.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.message.ClineAsk
 import com.github.kavos113.clinetest.shared.message.ClineAskOrSay
 import com.github.kavos113.clinetest.shared.message.ClineAskResponse
@@ -14,7 +14,6 @@ import com.github.kavos113.clinetest.shared.message.ClineSay
 import com.github.kavos113.clinetest.shared.message.ExtensionMessage
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task

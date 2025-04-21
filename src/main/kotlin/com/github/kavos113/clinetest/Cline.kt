@@ -21,8 +21,8 @@ import com.github.difflib.UnifiedDiffUtils
 import com.github.difflib.patch.DeltaType
 import com.github.difflib.patch.Patch
 import com.github.kavos113.clinetest.analyze.ProjectAnalyzer
-import com.github.kavos113.clinetest.shared.ApiRequestInfo
-import com.github.kavos113.clinetest.shared.ApiTokenInfo
+import com.github.kavos113.clinetest.shared.api.ApiRequestInfo
+import com.github.kavos113.clinetest.shared.api.ApiTokenInfo
 import com.github.kavos113.clinetest.shared.ClaudeRequestResult
 import com.github.kavos113.clinetest.shared.anthropic.textMessage
 import com.github.kavos113.clinetest.shared.anthropic.toContentBlockParam
